@@ -1,0 +1,20 @@
+import 'package:flutter/material.dart';
+
+class Director extends StatefulWidget {
+  final String channelName;
+
+  const Director({Key? key, required this.channelName}) : super(key: key);
+  _DirectorState createState() => _DirectorState();
+}
+
+class _DirectorState extends State<Director> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Text("Director"),
+      ),
+    );
+  }
+}
