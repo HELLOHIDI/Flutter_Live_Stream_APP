@@ -8,6 +8,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../appId.dart';
+import 'package:flutterlivestreamapp/models/user.dart';
 
 class Participant extends StatefulWidget {
   final String channelName;
@@ -23,7 +24,7 @@ class Participant extends StatefulWidget {
 }
 
 class _ParticipantState extends State<Participant> {
-  final List<int> _users = [];
+  final List<AgoraUser> _users = [];
   late RtcEngine _engine; //실제화상통화?
   AgoraRtmClient? _client;
   AgoraRtmChannel? _channel;
@@ -62,7 +63,7 @@ class _ParticipantState extends State<Participant> {
           //TODO: Add join channel logic
           joinChannelSuccess: (channel, uid, elapsed) {
         setState(() {
-          _users.add(uid);
+          _users.add(AgoraUser(uid: uid));
         });
       }, leaveChannel: (stats) {
         setState(() {
