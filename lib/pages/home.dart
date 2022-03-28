@@ -108,6 +108,7 @@ class _HomeState extends State<Home> {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => Director(
+                      uid: uid,
                       channelName: _channelName.text,
                     ),
                   ),
