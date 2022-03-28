@@ -7,7 +7,7 @@ import 'package:agora_rtm/agora_rtm.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../appId.dart';
+import 'package:flutterlivestreamapp/utils/appId.dart';
 import 'package:flutterlivestreamapp/models/user.dart';
 
 class Participant extends StatefulWidget {
@@ -39,12 +39,12 @@ class _ParticipantState extends State<Participant> {
 
   @override
   void dispose() {
-    _users.clear();
     _engine.leaveChannel();
     _engine.destroy();
     _channel?.leave();
     _client?.logout();
     _client?.destroy();
+    _users.clear();
 
     super.dispose();
   }
