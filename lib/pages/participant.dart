@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:agora_rtc_engine/rtc_engine.dart';
 // ignore: library_prefixes
 import 'package:agora_rtc_engine/rtc_local_view.dart' as RtcLocalView;
@@ -9,6 +11,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutterlivestreamapp/utils/appId.dart';
 import 'package:flutterlivestreamapp/models/user.dart';
+import 'package:flutterlivestreamapp/utils/message.dart';
 
 class Participant extends StatefulWidget {
   final String channelName;
@@ -24,12 +27,13 @@ class Participant extends StatefulWidget {
 }
 
 class _ParticipantState extends State<Participant> {
-  final List<AgoraUser> _users = [];
+  List<AgoraUser> _users = [];
   late RtcEngine _engine; //실제화상통화?
   AgoraRtmClient? _client;
   AgoraRtmChannel? _channel;
   bool muted = false;
   bool videoDisabled = false;
+  bool localUserActive = false;
 
   @override
   void initState() {
@@ -63,7 +67,19 @@ class _ParticipantState extends State<Participant> {
           //TODO: Add join channel logic
           joinChannelSuccess: (channel, uid, elapsed) {
         setState(() {
-          _users.add(AgoraUser(uid: uid));
+          int randomColor = (Random().nextDouble() * 0xFFFFFFFF).toInt();
+          Map<String, String> name = {
+            'key': 'name',
+            'value': widget.userName
+          };
+          Map<String, String> color = {
+            'key': 'color',
+            'value': randomColor.toString()
+          };
+          _client!.addOrUpdateLocalUserAttributes([
+            name,
+            color
+          ]);
         });
       }, leaveChannel: (stats) {
         setState(() {
@@ -98,6 +114,47 @@ class _ParticipantState extends State<Participant> {
 
     _channel?.onMessageReceived = (AgoraRtmMessage message, AgoraRtmMember member) {
       //TODO: implement this
+      List<String> parsedMessage = message.text.split(" ");
+      switch (parsedMessage[0]) {
+        case "mute":
+          if (parsedMessage[1] == widget.uid.toString()) {
+            setState(() {
+              muted = true;
+            });
+            _engine.muteLocalAudioStream(true);
+          }
+          break;
+        case "unmute":
+          if (parsedMessage[1] == widget.uid.toString()) {
+            setState(() {
+              muted = false;
+            });
+            _engine.muteLocalAudioStream(false);
+          }
+          break;
+        case "disable":
+          if (parsedMessage[1] == widget.uid.toString()) {
+            setState(() {
+              videoDisabled = true;
+            });
+            _engine.muteLocalVideoStream(true);
+          }
+          break;
+        case "enable":
+          if (parsedMessage[1] == widget.uid.toString()) {
+            setState(() {
+              videoDisabled = false;
+            });
+            _engine.muteLocalVideoStream(false);
+          }
+          break;
+        case "activeUsers":
+          setState(() {
+            _users = Message().parseActiveUsers(uids: parsedMessage[1]);
+          });
+          break;
+        default:
+      }
       print("Public Message from " + member.userId + ": " + (message.text));
     };
 
@@ -105,7 +162,7 @@ class _ParticipantState extends State<Participant> {
     await _client?.login(null, widget.uid.toString());
     _channel = await _client?.createChannel(widget.channelName);
     await _channel?.join();
-    await _engine?.joinChannel(null, widget.channelName, null, widget.uid);
+    await _engine.joinChannel(null, widget.channelName, null, widget.uid);
   }
 
   @override
@@ -130,42 +187,48 @@ class _ParticipantState extends State<Participant> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          RawMaterialButton(
-            onPressed: _onToggleMute,
-            child: Icon(
-              muted ? Icons.mic_off : Icons.mic,
-              color: muted ? Colors.white : Colors.blueAccent,
-              size: 20.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: muted ? Colors.blueAccent : Colors.white,
-            padding: const EdgeInsets.all(12.0),
-          ),
-          RawMaterialButton(
-            onPressed: () => _onCallEnd(context),
-            child: Icon(
-              Icons.call_end,
-              color: Colors.white,
-              size: 35.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: Colors.redAccent,
-            padding: const EdgeInsets.all(15.0),
-          ),
-          RawMaterialButton(
-            onPressed: _onToggleVideoDisabled,
-            child: Icon(
-              videoDisabled ? Icons.videocam_off : Icons.videocam,
-              color: videoDisabled ? Colors.white : Colors.blueAccent,
-              size: 20.0,
-            ),
-            shape: CircleBorder(),
-            elevation: 2.0,
-            fillColor: videoDisabled ? Colors.blueAccent : Colors.white,
-            padding: const EdgeInsets.all(12.0),
-          ),
+          localUserActive
+              ? RawMaterialButton(
+                  onPressed: _onToggleMute,
+                  child: Icon(
+                    muted ? Icons.mic_off : Icons.mic,
+                    color: muted ? Colors.white : Colors.blueAccent,
+                    size: 20.0,
+                  ),
+                  shape: CircleBorder(),
+                  elevation: 2.0,
+                  fillColor: muted ? Colors.blueAccent : Colors.white,
+                  padding: const EdgeInsets.all(12.0),
+                )
+              : SizedBox(),
+          localUserActive
+              ? RawMaterialButton(
+                  onPressed: () => _onCallEnd(context),
+                  child: Icon(
+                    Icons.call_end,
+                    color: Colors.white,
+                    size: 35.0,
+                  ),
+                  shape: CircleBorder(),
+                  elevation: 2.0,
+                  fillColor: Colors.redAccent,
+                  padding: const EdgeInsets.all(15.0),
+                )
+              : SizedBox(),
+          localUserActive
+              ? RawMaterialButton(
+                  onPressed: _onToggleVideoDisabled,
+                  child: Icon(
+                    videoDisabled ? Icons.videocam_off : Icons.videocam,
+                    color: videoDisabled ? Colors.white : Colors.blueAccent,
+                    size: 20.0,
+                  ),
+                  shape: CircleBorder(),
+                  elevation: 2.0,
+                  fillColor: videoDisabled ? Colors.blueAccent : Colors.white,
+                  padding: const EdgeInsets.all(12.0),
+                )
+              : const SizedBox(),
           RawMaterialButton(
             onPressed: _onSwitchCamera,
             child: Icon(
@@ -183,19 +246,101 @@ class _ParticipantState extends State<Participant> {
     );
   }
 
-  Widget _broadcastView() {
-    if (_users.isEmpty) {
-      return const Center(
-        child: Text("No Users"),
-      );
-    }
-    return Row(
-      children: [
-        Expanded(
-          child: RtcLocalView.SurfaceView(),
-        ),
-      ],
+  /// Video view row wrapper
+  Widget _expandedVideoView(List<Widget> views) {
+    final wrappedViews = views.map<Widget>((view) => Expanded(child: Container(child: view))).toList();
+    return Expanded(
+      child: Row(
+        children: wrappedViews,
+      ),
     );
+  }
+
+  /// Video layout wrapper
+  Widget _broadcastView() {
+    final views = _getRenderViews();
+    switch (views.length) {
+      case 1:
+        return Container(
+            child: Column(
+          children: <Widget>[
+            _expandedVideoView([
+              views[0]
+            ])
+          ],
+        ));
+      case 2:
+        return Container(
+            child: Column(
+          children: <Widget>[
+            _expandedVideoView([
+              views[0]
+            ]),
+            _expandedVideoView([
+              views[1]
+            ])
+          ],
+        ));
+      case 3:
+        return Container(
+            child: Column(
+          children: <Widget>[
+            _expandedVideoView(views.sublist(0, 2)),
+            _expandedVideoView(views.sublist(2, 3))
+          ],
+        ));
+      case 4:
+        return Container(
+            child: Column(
+          children: <Widget>[
+            _expandedVideoView(views.sublist(0, 2)),
+            _expandedVideoView(views.sublist(2, 4))
+          ],
+        ));
+      default:
+    }
+    return Container();
+  }
+
+  /// Helper function to get list of native views
+  List<Widget> _getRenderViews() {
+    final List<Widget> list = [];
+    bool checkIfLocalActive = false;
+    for (int i = 0; i < _users.length; i++) {
+      if (_users[i].uid == widget.uid) {
+        list.add(Stack(children: [
+          RtcLocalView.SurfaceView(),
+          Align(
+            child: Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(borderRadius: BorderRadius.only(topLeft: Radius.circular(10)), color: Colors.white),
+              child: Text(widget.userName),
+            ),
+            alignment: Alignment.bottomRight,
+          ),
+        ]));
+        checkIfLocalActive = true;
+      } else {
+        list.add(Stack(children: [
+          RtcRemoteView.SurfaceView(uid: _users[i].uid),
+          Align(
+            child: Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(borderRadius: BorderRadius.only(topLeft: Radius.circular(10)), color: Colors.white),
+              child: Text(_users[i].name ?? "name error"),
+            ),
+            alignment: Alignment.bottomRight,
+          ),
+        ]));
+      }
+    }
+
+    if (checkIfLocalActive) {
+      localUserActive = true;
+    } else {
+      localUserActive = false;
+    }
+    return list;
   }
 
   void _onToggleMute() {
