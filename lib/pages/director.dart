@@ -1,9 +1,10 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/all.dart';
+import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
+import 'package:circular_menu/circular_menu.dart';
 import 'package:flutterlivestreamapp/controllers/director_controller.dart';
 import 'package:flutterlivestreamapp/models/director_model.dart';
-import 'package:flutterlivestreamapp/models/user.dart';
+import 'package:flutterlivestreamapp/models/stream.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class Director extends StatefulWidget {
   final String channelName;
@@ -160,7 +161,7 @@ class StageUser extends StatelessWidget {
                     )
                   ])
                 : Stack(children: [
-                    //RtcRemoteView.SurfaceView(uid: directorData.activeUsers.elementAt(index).uid),
+                    RtcRemoteView.SurfaceView(uid: directorData.activeUsers.elementAt(index).uid),
                     Align(
                       child: Container(
                         decoration: BoxDecoration(borderRadius: BorderRadius.only(topLeft: Radius.circular(10)), color: directorData.activeUsers.elementAt(index).backgroundColor!.withOpacity(1)),
@@ -182,9 +183,9 @@ class StageUser extends StatelessWidget {
                 IconButton(
                   onPressed: () {
                     if (directorData.activeUsers.elementAt(index).muted) {
-                      //directorNotifier.toggleUserAudio(index: index, muted: true);
+                      directorNotifier.toggleUserAudio(index: index, muted: true);
                     } else {
-                      //directorNotifier.toggleUserAudio(index: index, muted: false);
+                      directorNotifier.toggleUserAudio(index: index, muted: false);
                     }
                   },
                   icon: Icon(Icons.mic_off),
@@ -193,9 +194,9 @@ class StageUser extends StatelessWidget {
                 IconButton(
                   onPressed: () {
                     if (directorData.activeUsers.elementAt(index).videoDisabled) {
-                      //directorNotifier.toggleUserVideo(index: index, enable: false);
+                      directorNotifier.toggleUserVideo(index: index, enable: false);
                     } else {
-                      //directorNotifier.toggleUserVideo(index: index, enable: true);
+                      directorNotifier.toggleUserVideo(index: index, enable: true);
                     }
                   },
                   icon: Icon(Icons.videocam_off),
