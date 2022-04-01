@@ -1,10 +1,10 @@
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as RtcRemoteView;
-import 'package:circular_menu/circular_menu.dart';
 import 'package:flutterlivestreamapp/controllers/director_controller.dart';
 import 'package:flutterlivestreamapp/models/director_model.dart';
 import 'package:flutterlivestreamapp/models/stream.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:circular_menu/circular_menu.dart';
 
 class Director extends StatefulWidget {
   final String channelName;
@@ -24,6 +24,143 @@ class _DirectorState extends State<Director> {
     context.read(directorController.notifier).joinCall(channelName: widget.channelName, uid: widget.uid);
   }
 
+  Future<dynamic> showYoutubeBottomSheet(BuildContext context, DirectorController directorNotifier) async {
+    TextEditingController streamUrl = TextEditingController();
+    TextEditingController streamKey = TextEditingController();
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Add Your Stream Destination",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              TextField(
+                autofocus: true,
+                controller: streamUrl,
+                decoration: InputDecoration(hintText: "Stream Url"),
+              ),
+              TextField(
+                controller: streamKey,
+                decoration: InputDecoration(hintText: "Stream Key"),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        directorNotifier.addPublishDestination(StreamPlatform.youtube, streamUrl.text.trim() + "/" + streamKey.text.trim());
+                        Navigator.pop(context);
+                      },
+                      child: Text("Add"),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<dynamic> showTwitchBottomSheet(BuildContext context, Object value, DirectorController directorNotifier) {
+    TextEditingController streamUrl = TextEditingController();
+    TextEditingController streamKey = TextEditingController();
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Add Your Stream Destination",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(
+                height: 20,
+              ),
+              TextField(
+                autofocus: true,
+                controller: streamUrl,
+                decoration: InputDecoration(hintText: "Injest Url"),
+              ),
+              TextField(
+                controller: streamKey,
+                decoration: InputDecoration(hintText: "Stream Key"),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        directorNotifier.addPublishDestination(value as StreamPlatform, "rtmp://" + streamUrl.text.trim() + "/app/" + streamKey.text.trim());
+                        Navigator.pop(context);
+                      },
+                      child: Text("Add"),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget streamButton(StreamDestination destination) {
+    switch (destination.platform) {
+      case StreamPlatform.youtube:
+        return Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Colors.red),
+          child: Text(
+            "Youtube",
+            style: TextStyle(color: Colors.white),
+          ),
+          padding: EdgeInsets.all(8),
+          margin: const EdgeInsets.only(right: 4),
+        );
+
+      case StreamPlatform.twitch:
+        return Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Colors.purple),
+          child: Text(
+            "Twitch",
+            style: TextStyle(color: Colors.white),
+          ),
+          padding: EdgeInsets.all(8),
+          margin: const EdgeInsets.only(right: 4),
+        );
+
+      case StreamPlatform.other:
+        return Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Colors.black),
+          child: Text(
+            "Other",
+            style: TextStyle(color: Colors.white),
+          ),
+          padding: EdgeInsets.all(8),
+          margin: const EdgeInsets.only(right: 4),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer(
@@ -36,91 +173,182 @@ class _DirectorState extends State<Director> {
 
         return Scaffold(
           appBar: AppBar(),
-          body: CustomScrollView(
-            slivers: [
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  [
-                    SafeArea(
-                      child: Container(),
-                    ),
-                  ],
-                ),
+          body: CircularMenu(
+            alignment: Alignment.bottomRight,
+            toggleButtonColor: Colors.black87,
+            toggleButtonBoxShadow: [
+              BoxShadow(color: Colors.black26, blurRadius: 10)
+            ],
+            items: [
+              CircularMenuItem(
+                icon: Icons.call_end,
+                color: Colors.red,
+                onTap: () {
+                  directorNotifier.leaveCall();
+                  Navigator.pop(context);
+                },
               ),
-              if (directorData.activeUsers.isEmpty)
+              directorData.isLive
+                  ? CircularMenuItem(
+                      icon: Icons.cancel,
+                      color: Colors.orange,
+                      onTap: () {
+                        directorNotifier.endStream();
+                      },
+                    )
+                  : CircularMenuItem(
+                      icon: Icons.videocam,
+                      color: Colors.orange,
+                      onTap: () {
+                        if (directorData.destinations.isNotEmpty) {
+                          directorNotifier.startStream();
+                        } else {
+                          throw ("Invalid URL");
+                        }
+                      },
+                    ),
+            ],
+            backgroundWidget: CustomScrollView(
+              slivers: [
                 SliverList(
                   delegate: SliverChildListDelegate(
                     [
-                      Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          child: const Text("Empty Stage"),
+                      SafeArea(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            PopupMenuButton(
+                                itemBuilder: (context) {
+                                  List<PopupMenuEntry<Object>> list = [];
+                                  list.add(
+                                    PopupMenuItem(
+                                      child: ListTile(
+                                        leading: Icon(Icons.add),
+                                        title: Text("Youtube"),
+                                      ),
+                                      value: StreamPlatform.youtube,
+                                    ),
+                                  );
+                                  list.add(const PopupMenuDivider());
+
+                                  list.add(
+                                    PopupMenuItem(
+                                      child: ListTile(
+                                        leading: Icon(Icons.add),
+                                        title: Text("Twitch"),
+                                      ),
+                                      value: StreamPlatform.twitch,
+                                    ),
+                                  );
+                                  list.add(const PopupMenuDivider());
+
+                                  list.add(
+                                    PopupMenuItem(
+                                      child: ListTile(
+                                        leading: Icon(Icons.add),
+                                        title: Text("Other"),
+                                      ),
+                                      value: StreamPlatform.other,
+                                    ),
+                                  );
+                                  list.add(const PopupMenuDivider());
+                                  return list;
+                                },
+                                icon: Icon(Icons.add),
+                                onCanceled: () {
+                                  print("You have canceld menu");
+                                },
+                                onSelected: (value) {
+                                  switch (value) {
+                                    case StreamPlatform.youtube:
+                                      showYoutubeBottomSheet(context, directorNotifier);
+                                      break;
+                                    case StreamPlatform.youtube:
+                                      break;
+                                  }
+                                },
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              SliverGrid(
-                delegate: SliverChildBuilderDelegate(
-                  (BuildContext ctx, index) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: StageUser(
-                            directorData: directorData,
-                            directorNotifier: directorNotifier,
-                            index: index,
+                if (directorData.activeUsers.isEmpty)
+                  SliverList(
+                    delegate: SliverChildListDelegate(
+                      [
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            child: const Text("Empty Stage"),
                           ),
                         ),
                       ],
-                    );
-                  },
-                  childCount: directorData.activeUsers.length,
-                ),
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: size.width / 2,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                ),
-              ),
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  [
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Divider(
-                        thickness: 3,
-                        indent: 80,
-                        endIndent: 80,
-                      ),
                     ),
-                  ],
-                ),
-              ),
-              SliverGrid(
-                delegate: SliverChildBuilderDelegate(
-                  (BuildContext ctx, index) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: LobbyUser(
-                            directorData: directorData,
-                            directorNotifier: directorNotifier,
-                            index: index,
+                  ),
+                SliverGrid(
+                  delegate: SliverChildBuilderDelegate(
+                    (BuildContext ctx, index) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: StageUser(
+                              directorData: directorData,
+                              directorNotifier: directorNotifier,
+                              index: index,
+                            ),
                           ),
+                        ],
+                      );
+                    },
+                    childCount: directorData.activeUsers.length,
+                  ),
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: size.width / 2,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                  ),
+                ),
+                SliverList(
+                  delegate: SliverChildListDelegate(
+                    [
+                      const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Divider(
+                          thickness: 3,
+                          indent: 80,
+                          endIndent: 80,
                         ),
-                      ],
-                    );
-                  },
-                  childCount: directorData.activeUsers.length,
+                      ),
+                    ],
+                  ),
                 ),
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                  maxCrossAxisExtent: size.width / 2,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
+                SliverGrid(
+                  delegate: SliverChildBuilderDelegate(
+                    (BuildContext ctx, index) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: LobbyUser(
+                              directorData: directorData,
+                              directorNotifier: directorNotifier,
+                              index: index,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                    childCount: directorData.activeUsers.length,
+                  ),
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: size.width / 2,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -194,9 +422,9 @@ class StageUser extends StatelessWidget {
                 IconButton(
                   onPressed: () {
                     if (directorData.activeUsers.elementAt(index).videoDisabled) {
-                      directorNotifier.toggleUserVideo(index: index, enable: false);
+                      directorNotifier.toggleUserVideo(index: index, enabled: false);
                     } else {
-                      directorNotifier.toggleUserVideo(index: index, enable: true);
+                      directorNotifier.toggleUserVideo(index: index, enabled: true);
                     }
                   },
                   icon: Icon(Icons.videocam_off),
