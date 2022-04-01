@@ -1,6 +1,7 @@
 import 'package:agora_rtc_engine/rtc_engine.dart';
 import 'package:agora_rtm/agora_rtm.dart';
 import 'package:flutterlivestreamapp/models/user.dart';
+import 'package:flutterlivestreamapp/models/stream.dart';
 
 class DirectorModel {
   RtcEngine? engine;
@@ -9,6 +10,8 @@ class DirectorModel {
   Set<AgoraUser> activeUsers;
   Set<AgoraUser> lobbyUsers;
   AgoraUser? localUser;
+  bool isLive;
+  List<StreamDestination> destinations;
 
   DirectorModel({
     this.engine,
@@ -17,6 +20,8 @@ class DirectorModel {
     this.activeUsers = const {},
     this.lobbyUsers = const {},
     this.localUser,
+    this.isLive = false,
+    this.destinations = const [],
   });
 
   DirectorModel copyWith({
@@ -26,6 +31,8 @@ class DirectorModel {
     Set<AgoraUser>? activeUsers,
     Set<AgoraUser>? lobbyUsers,
     AgoraUser? localUser,
+    bool? isLive,
+    List<StreamDestination>? destinations,
   }) {
     return DirectorModel(
       engine: engine ?? this.engine,
@@ -34,6 +41,7 @@ class DirectorModel {
       activeUsers: activeUsers ?? this.activeUsers,
       lobbyUsers: lobbyUsers ?? this.lobbyUsers,
       localUser: localUser ?? this.localUser,
+      isLive: isLive ?? this.isLive,
     );
   }
 }
