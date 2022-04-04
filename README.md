@@ -39,14 +39,14 @@
 # Using Packages
 |package|ver.|function|
 |---|---|------|
-|<a href="https://pub.dev/packages/agora_rtc_engine">agora_rtc_engine</a>|^4.0.7||
-|<a href="https://pub.dev/packages/agora_rtm">agora_rtm</a>|^1.0.1||
-|<a href="https://pub.dev/packages/flutter_riverpod">flutter_riverpod</a>|^0.14.0+3||
-|<a href="https://pub.dev/packages/shared_preferences">shared_preferences</a>|^2.0.8||
-|<a href="https://pub.dev/packages/app_popup_menu">app_popup_menu</a>|^1.0.0||
-|<a href="https://pub.dev/packages/modal_bottom_sheet">modal_bottom_sheet</a>|^2.0.0||
-|<a href="https://pub.dev/packages/circular_menu">circular_menu</a>|^1.2.3||
-|<a href="https://pub.dev/packages/permission_handler">permission_handler</a>|^8.2.5||
+|<a href="https://pub.dev/packages/agora_rtc_engine">agora_rtc_engine</a>|^4.0.7|Agora에서 제공하는 실시간 음성 및 영상 통신을 추가할 수 있는 빌딩 블록을 제공하는 패키지|
+|<a href="https://pub.dev/packages/agora_rtm">agora_rtm</a>|^1.0.1|Agora에서 제공하는 실시간 메시징을 추가할 수 있는 빌딩 블록을 제공하는 패키지|
+|<a href="https://pub.dev/packages/flutter_riverpod">flutter_riverpod</a>|^0.14.0+3|상태관리를 위한 패키지|
+|<a href="https://pub.dev/packages/shared_preferences">shared_preferences</a>|^2.0.8|key-value 형태의 데이터를 디스크에 저장해서 사용할 수 있도록 도와주는 패키지<br>+) 로그인이 필요한 앱을 개발할 때 사용자의 ID와 패스워드 등을 기억하는 기능을 구현할 때 이용 가능|
+|<a href="https://pub.dev/packages/app_popup_menu">app_popup_menu</a>|^1.0.0|팝업 메뉴를 제작하도록 도아주는 패키지|
+|<a href="https://pub.dev/packages/modal_bottom_sheet">modal_bottom_sheet</a>|^2.0.0|간단하게 바텀시트를 제작하도록 도와주는 패키지|
+|<a href="https://pub.dev/packages/circular_menu">circular_menu</a>|^1.2.3|간단하게 애니메이션 원형 메뉴를 제작하도록 도와주는 패키지|
+|<a href="https://pub.dev/packages/permission_handler">permission_handler</a>|^8.2.5|사용자에게 여러가지 기능의 권한을 요청하고 상태를 확인할 수 있는 크로스 플랫폼 API를 제공하는 패키지|
 
 # Program Structure
 - **📃 main.dart** : 메인 
