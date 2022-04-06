@@ -45,39 +45,17 @@ class _HomeState extends State<Home> {
             SizedBox(height: 5),
             const Text("Multi Streaming with Friends"),
             const SizedBox(height: 40),
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.85,
-              child: TextField(
-                controller: _userName,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: Colors.grey),
-                  ),
-                  hintText: 'User Name',
-                ),
-              ),
-            ),
+            makeTextFieldLoginBox(_userName, "User Name"),
             const SizedBox(height: 8),
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.85,
-              child: TextField(
-                controller: _channelName,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: Colors.grey),
-                  ),
-                  hintText: 'Channel Name',
-                ),
-              ),
-            ),
+            makeTextFieldLoginBox(_channelName, "Channel Name"),
+            // 디렉터방으로 가는 버튼
             TextButton(
               onPressed: () async {
                 await [
                   Permission.camera,
                   Permission.microphone
                 ].request();
+                // 디렉터방으로 넘어갈때 가져가는 속성들
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => Participant(
@@ -99,12 +77,14 @@ class _HomeState extends State<Home> {
                 ],
               ),
             ),
+            // 참가자방으로 가는 버튼
             TextButton(
               onPressed: () async {
                 await [
                   Permission.camera,
                   Permission.microphone
                 ].request();
+                // 참가자방으로 넘어갈때 가져가는 속성들
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => Director(
@@ -126,6 +106,22 @@ class _HomeState extends State<Home> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget makeTextFieldLoginBox(TextEditingController controller, String hintText) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.85,
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: const BorderSide(color: Colors.grey),
+          ),
+          hintText: hintText,
         ),
       ),
     );
