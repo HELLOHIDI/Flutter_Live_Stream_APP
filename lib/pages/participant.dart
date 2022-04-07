@@ -14,9 +14,9 @@ import 'package:flutterlivestreamapp/models/user.dart';
 import 'package:flutterlivestreamapp/utils/message.dart';
 
 class Participant extends StatefulWidget {
-  final String channelName;
-  final String userName;
-  final int uid;
+  final String channelName; //채널 이름
+  final String userName; //사용자 이름
+  final int uid; // USER ID(이걸 통해서 모든걸 조작한다.)
   const Participant({
     Key? key,
     required this.channelName,
@@ -27,12 +27,12 @@ class Participant extends StatefulWidget {
 }
 
 class _ParticipantState extends State<Participant> {
-  List<AgoraUser> _users = [];
-  late RtcEngine _engine; //실제화상통화?
-  AgoraRtmClient? _client;
-  AgoraRtmChannel? _channel;
-  bool muted = false;
-  bool videoDisabled = false;
+  List<AgoraUser> _users = []; // 화상 통화 사용자 리스트
+  late RtcEngine _engine; // video call을 핸들링하는 변수
+  AgoraRtmClient? _client; // 실시간 메시징을 하는 대상
+  AgoraRtmChannel? _channel; // 실시간 메시징을 하는 채널
+  bool muted = false; // 음소거 여부
+  bool videoDisabled = false; //화면 재생 여부
   bool localUserActive = false;
 
   @override
@@ -53,20 +53,23 @@ class _ParticipantState extends State<Participant> {
     super.dispose();
   }
 
+  // Agora 프로젝트에 필요한 엔진과 클라이언트를 연결 구축
   Future<void> initializeAgora() async {
-    _engine = await RtcEngine.createWithContext(RtcEngineContext(appId));
-    _client = await AgoraRtmClient.createInstance(appId);
+    _engine = await RtcEngine.createWithContext(RtcEngineContext(appId)); //실제 엔진을 만든다.(gore에서 제작된 appID 필요)
+    _client = await AgoraRtmClient.createInstance(appId); //AgoraRtm 클라이언트 생성(gore에서 제작된 appID 필요)
 
-    await _engine.enableVideo();
-    await _engine.setChannelProfile(ChannelProfile.LiveBroadcasting);
-    await _engine.setClientRole(ClientRole.Broadcaster);
+    await _engine.enableVideo(); // 코어 RTC는 오디오로만 시작, 그래서 비디오를 활성화시킨다.
+    await _engine.setChannelProfile(ChannelProfile.LiveBroadcasting); //세개의 프로필(생방송, 일반 영상통화, 게임) 중 생방송을 활성화시킨다.
+    await _engine.setClientRole(ClientRole.Broadcaster); // 2개의 역할(방송자, 시청자) 중 방송자를 활성화 시킨다.
 
-    // Callbacks for the RTC ENGINE
+    // 이벤트 핸들러 생성
+    // 애플리케이션 내에서 어떤 이벤트가 발생할 때마다 트리거될 것이다.
     _engine.setEventHandler(
       RtcEngineEventHandler(
-          //TODO: Add join channel logic
+          //채널에 성공적으로 참여하게 되면...
           joinChannelSuccess: (channel, uid, elapsed) {
         setState(() {
+          // _users에 등록한다.
           int randomColor = (Random().nextDouble() * 0xFFFFFFFF).toInt();
           Map<String, String> name = {
             'key': 'name',
@@ -89,29 +92,45 @@ class _ParticipantState extends State<Participant> {
     );
 
     // Callbacks for RTM Client
+    // 메세지를 받으면 어떤 클라이언트가 어떤 채널인지를 확인하기 위해 callback 함수를 등록한다.
     _client?.onMessageReceived = (AgoraRtmMessage message, String peerId) {
       print("Private Message from " + peerId + ":" + (message.text));
     };
 
     _client?.onConnectionStateChanged = (int state, int reason) {
+      // reason : 왜 연결상태가 변하되었는지
+      // state : 주어진 현재 상태
       print('Connection state changed:  ' + state.toString() + ', reason:  ' + reason.toString());
       if (state == 5) {
-        _channel?.leave();
-        _client?.logout();
+        //연결 상태 중단을 나타내는 값이면(agora api reference)
+        _channel?.leave(); // 채널을 떠나고
+        _client?.logout(); // 클라이언트는 로그아웃 하고
         _client?.destroy();
-        print("Logout.");
+        print("Logout."); //로그아웃인것을 프린트 해라
       }
     };
 
+    // Join the RTM and RTC channels
+    await _client?.login(null, widget.uid.toString()); // 로그인
+    _channel = await _client?.createChannel(widget.channelName); //채널 생성
+    await _channel?.join(); // 참여
+
+    // uid가 필요한 이유는 RTM client와 매칭을 해야되기 때문이다.
+    await _engine.joinChannel(null, widget.channelName, null, widget.uid); // 채널에 참여한다
+
     // Callbacs for RTM Channel
+
+    // 멤버가 참여하면 그 멤버의 아이디와 채널을 출력하는 콜백함수
     _channel?.onMemberJoined = (AgoraRtmMember member) {
       print("Member joined: " + member.userId + ', channel: ' + member.channelId);
     };
 
+    // 멤버가 떠나면 그 멤버의 아이디와 채널을 출력하는 콜백함수
     _channel?.onMemberLeft = (AgoraRtmMember member) {
       print("Member left: " + member.userId + ', channel: ' + member.channelId);
     };
 
+    // 채널의 모든 참여자에게 보내는 메세지를 받았을때
     _channel?.onMessageReceived = (AgoraRtmMessage message, AgoraRtmMember member) {
       //TODO: implement this
       List<String> parsedMessage = message.text.split(" ");
@@ -157,12 +176,6 @@ class _ParticipantState extends State<Participant> {
       }
       print("Public Message from " + member.userId + ": " + (message.text));
     };
-
-    //Join the RTM and RTC Channels
-    await _client?.login(null, widget.uid.toString());
-    _channel = await _client?.createChannel(widget.channelName);
-    await _channel?.join();
-    await _engine.joinChannel(null, widget.channelName, null, widget.uid);
   }
 
   @override
