@@ -41,16 +41,17 @@ class _ParticipantState extends State<Participant> {
     initializeAgora();
   }
 
+  // 모든 영상 통화와 전체 RTM 연결을 처분 => 다시 시작할때 새로운 slate를 얻을 수 있도록!
   @override
   void dispose() {
-    _engine.leaveChannel();
-    _engine.destroy();
-    _channel?.leave();
-    _client?.logout();
-    _client?.destroy();
-    _users.clear();
+    _users.clear(); // 참가자 리스트 비우고
+    _engine.leaveChannel(); // videocall 채널 떠나고
+    _engine.destroy(); // videocall 엔진 파괴
+    _channel?.leave(); // rtm 채널 떠나고
+    _client?.logout(); // 로그아웃하고
+    _client?.destroy(); // rtm 채널 파괴
 
-    super.dispose();
+    super.dispose(); // 전부 처분
   }
 
   // Agora 프로젝트에 필요한 엔진과 클라이언트를 연결 구축
@@ -69,6 +70,7 @@ class _ParticipantState extends State<Participant> {
           //채널에 성공적으로 참여하게 되면...
           joinChannelSuccess: (channel, uid, elapsed) {
         setState(() {
+          //_users.add(uid);
           // _users에 등록한다.
           int randomColor = (Random().nextDouble() * 0xFFFFFFFF).toInt();
           Map<String, String> name = {
@@ -186,7 +188,7 @@ class _ParticipantState extends State<Participant> {
         child: Stack(
           children: [
             _broadcastView(),
-            _toolbar()
+            _toolbar(),
           ],
         ),
       ),
@@ -201,6 +203,7 @@ class _ParticipantState extends State<Participant> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           localUserActive
+              // 마이크 음소거 여부 버튼
               ? RawMaterialButton(
                   onPressed: _onToggleMute,
                   child: Icon(
@@ -215,6 +218,7 @@ class _ParticipantState extends State<Participant> {
                 )
               : SizedBox(),
           localUserActive
+              // 화상 통화를 종료하는 버튼
               ? RawMaterialButton(
                   onPressed: () => _onCallEnd(context),
                   child: Icon(
@@ -229,6 +233,7 @@ class _ParticipantState extends State<Participant> {
                 )
               : SizedBox(),
           localUserActive
+              // 비디오 활성화 여부 버튼
               ? RawMaterialButton(
                   onPressed: _onToggleVideoDisabled,
                   child: Icon(
@@ -242,6 +247,7 @@ class _ParticipantState extends State<Participant> {
                   padding: const EdgeInsets.all(12.0),
                 )
               : const SizedBox(),
+          // 카메라 방향 변경 버튼
           RawMaterialButton(
             onPressed: _onSwitchCamera,
             child: Icon(
@@ -356,6 +362,7 @@ class _ParticipantState extends State<Participant> {
     return list;
   }
 
+  // 음소거 여부를 결정하는 함수
   void _onToggleMute() {
     setState(() {
       muted = !muted;
@@ -363,6 +370,7 @@ class _ParticipantState extends State<Participant> {
     _engine.muteLocalAudioStream(muted);
   }
 
+  // 비디오 활성화 여부를 결정하는 함수
   void _onToggleVideoDisabled() {
     setState(() {
       videoDisabled = !videoDisabled;
@@ -370,10 +378,12 @@ class _ParticipantState extends State<Participant> {
     _engine.muteLocalVideoStream(videoDisabled);
   }
 
+  // 카메라 방향을 결정하는 함수
   void _onSwitchCamera() {
     _engine.switchCamera();
   }
 
+  // 화상통화를 종료하는 함수
   void _onCallEnd(BuildContext context) {
     Navigator.pop(context);
   }
