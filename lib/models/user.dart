@@ -1,12 +1,13 @@
 import 'dart:ui';
 
 class AgoraUser {
-  int uid;
-  bool muted;
-  bool videoDisabled;
-  String? name;
-  Color? backgroundColor;
+  int uid; // USER ID(이걸 통해서 모든걸 조작한다.)
+  bool muted; // 음소거 여부
+  bool videoDisabled; // 비디오 활성화 여부
+  String? name; // 이름
+  Color? backgroundColor; //배경색
 
+  // 생성자
   AgoraUser({
     required this.uid,
     this.muted = false,
