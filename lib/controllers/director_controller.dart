@@ -3,20 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutterlivestreamapp/models/director_model.dart';
 import 'package:flutterlivestreamapp/models/user.dart';
-
 import 'package:agora_rtm/agora_rtm.dart';
 import 'package:flutterlivestreamapp/utils/appId.dart';
-
 import 'package:flutterlivestreamapp/utils/message.dart';
-
 import 'package:flutterlivestreamapp/models/stream.dart';
 
+// StateNotifier : 상태알림 업데이트 기능
+// UI를 업데이트하기 위해 청취하는 모든 사용자에게 알림을 보내거나 상태가 변경되었기 때문에 업데이트해야 하는 모든 기능을 알려줌
+
+// 사용하는 것을 멈추면 자체적으로 처분됨.
 final directorController = StateNotifierProvider.autoDispose<DirectorController, DirectorModel>((ref) {
   return DirectorController(ref.read);
 });
 
 class DirectorController extends StateNotifier<DirectorModel> {
-  final Reader read;
+  final Reader read; //제공자 범위 내(main에서 설정한 providerscope)의 모든 상태를 읽을 수 있도록 하는 속성0
 
   DirectorController(this.read) : super(DirectorModel());
 
