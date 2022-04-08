@@ -163,11 +163,15 @@ class _DirectorState extends State<Director> {
 
   @override
   Widget build(BuildContext context) {
+    //  provdiver에 응답하거나 provdiver가 업데이트할 때 가능한 한 적은 수의 위젯을 재구성하는 데 사용
     return Consumer(
+      // 모든 기능에 액세스하거나 데이터를 업데이트를 하게 만든다. 
       builder: (BuildContext context, T Function<T>(ProviderBase<Object?, T>) watch, Widget? child) {
-        DirectorController directorNotifier = watch(directorController.notifier);
-        DirectorModel directorData = watch(directorController);
+        DirectorController directorNotifier = watch(directorController.notifier); // director controller
+        DirectorModel directorData = watch(directorController); // director model provider로 현재의 데이터를 얻을 수 잇다.
         Size size = MediaQuery.of(context).size;
+
+        
         // directorNotifier.muteUser();
         // Text(directorData.activerUsers.elementAt(1).muted.toString());
 
