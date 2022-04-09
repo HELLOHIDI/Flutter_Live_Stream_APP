@@ -32,9 +32,8 @@ class _ParticipantState extends State<Participant> {
   AgoraRtmClient? _client; // 실시간 메시징을 하는 대상
   AgoraRtmChannel? _channel; // 실시간 메시징을 하는 채널
   bool muted = false; // 음소거 여부
-  bool videoDisabled = false; //화면 재생 여부
-  bool localUserActive = false;
-
+  bool videoDisabled = false; // 화면 재생 여부
+  bool localUserActive = false; //메인 페이지에 있는지 아닌지를 알기 위해 활성 사용자라는 변수
   @override
   void initState() {
     super.initState();
@@ -72,6 +71,8 @@ class _ParticipantState extends State<Participant> {
         setState(() {
           //_users.add(uid);
           // _users에 등록한다.
+
+          // 활성 사용자마다 랜덤한 배경색을 배정받도록 한다.
           int randomColor = (Random().nextDouble() * 0xFFFFFFFF).toInt();
           Map<String, String> name = {
             'key': 'name',
@@ -81,6 +82,7 @@ class _ParticipantState extends State<Participant> {
             'key': 'color',
             'value': randomColor.toString()
           };
+          // 해당 이름과 배경색을 업데이트 해준다.
           _client!.addOrUpdateLocalUserAttributes([
             name,
             color
@@ -134,41 +136,55 @@ class _ParticipantState extends State<Participant> {
 
     // 채널의 모든 참여자에게 보내는 메세지를 받았을때
     _channel?.onMessageReceived = (AgoraRtmMessage message, AgoraRtmMember member) {
-      //TODO: implement this
+      // 스페이스 기준으로 요소들을 나눔 (ex) mute uid
       List<String> parsedMessage = message.text.split(" ");
       switch (parsedMessage[0]) {
+        // mute라면
         case "mute":
           if (parsedMessage[1] == widget.uid.toString()) {
+            // 해당 uid의
+            // muted 값을 true로 변경하고
             setState(() {
               muted = true;
             });
+            // 오디오 스트림을 mute 시킨다
             _engine.muteLocalAudioStream(true);
           }
           break;
+        // unmmute라면
         case "unmute":
           if (parsedMessage[1] == widget.uid.toString()) {
+            // 해당 uid의
+            // muted 값을 false로 변경하고
             setState(() {
               muted = false;
             });
             _engine.muteLocalAudioStream(false);
           }
           break;
+        // disable라면
         case "disable":
           if (parsedMessage[1] == widget.uid.toString()) {
+            // 해당 uid의
+            // videoDisabled 값을 true로 변경하고
             setState(() {
               videoDisabled = true;
             });
             _engine.muteLocalVideoStream(true);
           }
           break;
+        // enable라면
         case "enable":
           if (parsedMessage[1] == widget.uid.toString()) {
+            // 해당 uid의
+            // videoDisabled 값을 false로 변경하고
             setState(() {
               videoDisabled = false;
             });
             _engine.muteLocalVideoStream(false);
           }
           break;
+        // activeUsers라면 _users에 추가한다.
         case "activeUsers":
           setState(() {
             _users = Message().parseActiveUsers(uids: parsedMessage[1]);
