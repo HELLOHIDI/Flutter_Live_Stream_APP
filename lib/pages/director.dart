@@ -414,26 +414,35 @@ class StageUser extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                //음소거 버튼
                 IconButton(
                   onPressed: () {
+                    // 눌렀을 때 muted면  true
                     if (directorData.activeUsers.elementAt(index).muted) {
                       directorNotifier.toggleUserAudio(index: index, muted: true);
                     } else {
+                      // unmuted면  true
                       directorNotifier.toggleUserAudio(index: index, muted: false);
                     }
                   },
                   icon: Icon(Icons.mic_off),
+                  // 음소거 일때 빨강 아닐때 하양
                   color: directorData.activeUsers.elementAt(index).muted ? Colors.red : Colors.white,
                 ),
+
+                // 비디오 활성화 버튼
                 IconButton(
                   onPressed: () {
+                    // 눌렀을 때 videodisabled라면 enabled false
                     if (directorData.activeUsers.elementAt(index).videoDisabled) {
                       directorNotifier.toggleUserVideo(index: index, enabled: false);
                     } else {
+                      // videoabled라면 enabled true
                       directorNotifier.toggleUserVideo(index: index, enabled: true);
                     }
                   },
                   icon: Icon(Icons.videocam_off),
+                  // 비활성화면 빨강 아니면 하양
                   color: directorData.activeUsers.elementAt(index).videoDisabled ? Colors.red : Colors.white,
                 ),
 
