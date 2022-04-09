@@ -7,8 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:circular_menu/circular_menu.dart';
 
 class Director extends StatefulWidget {
-  final String channelName;
-  final int uid;
+  final String channelName; // 채널명
+  final int uid; //USER ID
+  // 생성자
   const Director({
     Key? key,
     required this.channelName,
@@ -21,6 +22,7 @@ class _DirectorState extends State<Director> {
   @override
   void initState() {
     super.initState();
+    // 알림이 통화 참여 기능을 클릭하는 우리의 디렉터 컨트롤러를 읽을 것.
     context.read(directorController.notifier).joinCall(channelName: widget.channelName, uid: widget.uid);
   }
 
@@ -165,13 +167,12 @@ class _DirectorState extends State<Director> {
   Widget build(BuildContext context) {
     //  provdiver에 응답하거나 provdiver가 업데이트할 때 가능한 한 적은 수의 위젯을 재구성하는 데 사용
     return Consumer(
-      // 모든 기능에 액세스하거나 데이터를 업데이트를 하게 만든다. 
+      // 모든 기능에 액세스하거나 데이터를 업데이트를 하게 만든다.
       builder: (BuildContext context, T Function<T>(ProviderBase<Object?, T>) watch, Widget? child) {
         DirectorController directorNotifier = watch(directorController.notifier); // director controller
         DirectorModel directorData = watch(directorController); // director model provider로 현재의 데이터를 얻을 수 잇다.
         Size size = MediaQuery.of(context).size;
 
-        
         // directorNotifier.muteUser();
         // Text(directorData.activerUsers.elementAt(1).muted.toString());
 
@@ -225,34 +226,25 @@ class _DirectorState extends State<Director> {
                                 itemBuilder: (context) {
                                   List<PopupMenuEntry<Object>> list = [];
                                   list.add(
-                                    PopupMenuItem(
-                                      child: ListTile(
-                                        leading: Icon(Icons.add),
-                                        title: Text("Youtube"),
-                                      ),
-                                      value: StreamPlatform.youtube,
+                                    makePopMenuItem(
+                                      "Youtube",
+                                      StreamPlatform.youtube,
                                     ),
                                   );
                                   list.add(const PopupMenuDivider());
 
                                   list.add(
-                                    PopupMenuItem(
-                                      child: ListTile(
-                                        leading: Icon(Icons.add),
-                                        title: Text("Twitch"),
-                                      ),
-                                      value: StreamPlatform.twitch,
+                                    makePopMenuItem(
+                                      "Twitch",
+                                      StreamPlatform.twitch,
                                     ),
                                   );
                                   list.add(const PopupMenuDivider());
 
                                   list.add(
-                                    PopupMenuItem(
-                                      child: ListTile(
-                                        leading: Icon(Icons.add),
-                                        title: Text("Other"),
-                                      ),
-                                      value: StreamPlatform.other,
+                                    makePopMenuItem(
+                                      "Other",
+                                      StreamPlatform.other,
                                     ),
                                   );
                                   list.add(const PopupMenuDivider());
@@ -358,6 +350,16 @@ class _DirectorState extends State<Director> {
       },
     );
   }
+
+  PopupMenuEntry<Object> makePopMenuItem(String platform, StreamPlatform streamPlatform) {
+    return PopupMenuItem(
+      child: ListTile(
+        leading: Icon(Icons.add),
+        title: Text(platform),
+      ),
+      value: streamPlatform,
+    );
+  }
 }
 
 class StageUser extends StatelessWidget {
@@ -434,6 +436,8 @@ class StageUser extends StatelessWidget {
                   icon: Icon(Icons.videocam_off),
                   color: directorData.activeUsers.elementAt(index).videoDisabled ? Colors.red : Colors.white,
                 ),
+
+                // 활성화 유저에서 로비 유저로 강등시키는 버튼
                 IconButton(
                   onPressed: () {
                     directorNotifier.demoteToLobbyUser(uid: directorData.activeUsers.elementAt(index).uid);
@@ -475,6 +479,7 @@ class LobbyUser extends StatelessWidget {
                 Container(
                   color: (directorData.lobbyUsers.elementAt(index).backgroundColor != null) ? directorData.lobbyUsers.elementAt(index).backgroundColor!.withOpacity(1) : Colors.black,
                 ),
+                // 중앙에 사용자 이름 표시, 이름 없으면 error name 출력
                 Align(
                   alignment: Alignment.center,
                   child: Text(
@@ -487,6 +492,8 @@ class LobbyUser extends StatelessWidget {
               //     uid: directorData.lobbyUsers.elementAt(index).uid,
               //   ),
               ),
+
+          // 로비 유저에서 활성화 유저로 승격시키는 버튼
           Container(
             decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Colors.black54),
             child: Column(
