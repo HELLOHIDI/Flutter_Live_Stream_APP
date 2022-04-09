@@ -54,17 +54,26 @@ class DirectorController extends StateNotifier<DirectorModel> {
         userOffline: (uid, reason) {
           removeUser(uid: uid);
         },
+
+        // 음소거 여부를 변경하는 함수
         remoteAudioStateChanged: (uid, state, reason, elapsed) {
+          // 해당 사용자의 상태가 unmuted일때
           if (state == AudioRemoteState.Decoding) {
             updateUserAudio(uid: uid, muted: false);
+            // 해당 사용자가 상태가 muted일때
           } else if (state == AudioRemoteState.Stopped) {
             updateUserAudio(uid: uid, muted: true);
           }
         },
+
+        // 비디오 활성화 여부를 변경하는 함수
         remoteVideoStateChanged: (uid, state, reason, elapsed) {
+          // 해당 사용자의 상태가 videoabled일때
           if (state == VideoRemoteState.Decoding) {
             updateUserVideo(uid: uid, videoDisabled: false);
-          } else if (state == VideoRemoteState.Stopped) {
+          }
+          // 해당 사용자의 상태가 videodisabled일때
+          else if (state == VideoRemoteState.Stopped) {
             updateUserVideo(uid: uid, videoDisabled: true);
           }
         },
@@ -134,11 +143,13 @@ class DirectorController extends StateNotifier<DirectorModel> {
           uid: uid,
           muted: true,
           videoDisabled: true,
+          // participant에서 결정된 이름과 랜덤한 색상 배정.
           name: userAttributes?["name"],
           backgroundColor: Color(int.parse(userAttributes?["color"])),
         )
       },
     );
+    //참가자가 자신의 화면을 업데이트할 수 있도록 활성 사용자들의 메시지를 보냄
     state.channel!.sendMessage(AgoraRtmMessage.fromText(Message().sendActiveUsers(activeUsers: state.activeUsers)));
   }
 
@@ -170,8 +181,10 @@ class DirectorController extends StateNotifier<DirectorModel> {
       )
     }, lobbyUsers: _tempLobby);
 
+    // 음소거 해제 & 비디오 활성화 => 메세지를 보낸다
     state.channel!.sendMessage(AgoraRtmMessage.fromText("unmute $uid"));
     state.channel!.sendMessage(AgoraRtmMessage.fromText("enable $uid"));
+    //참가자가 자신의 화면을 업데이트할 수 있도록 활성 사용자들의 메시지를 보냄
     state.channel!.sendMessage(AgoraRtmMessage.fromText(Message().sendActiveUsers(activeUsers: state.activeUsers)));
 
     if (state.isLive) {
@@ -209,8 +222,10 @@ class DirectorController extends StateNotifier<DirectorModel> {
       )
     }, activeUsers: _tempActive);
 
+    // 음소거 & 비디오 비활성화 => 메세지를 보낸다
     state.channel!.sendMessage(AgoraRtmMessage.fromText("mute $uid"));
     state.channel!.sendMessage(AgoraRtmMessage.fromText("disable $uid"));
+    //참가자가 자신의 화면을 업데이트할 수 있도록 활성 사용자들의 메시지를 보냄
     state.channel!.sendMessage(AgoraRtmMessage.fromText(Message().sendActiveUsers(activeUsers: state.activeUsers)));
 
     if (state.isLive) {
@@ -239,6 +254,7 @@ class DirectorController extends StateNotifier<DirectorModel> {
 
     // 제거한 사용자의 리스트로 업데이트 한다.
     state = state.copyWith(activeUsers: _tempActive, lobbyUsers: _tempLobby);
+    //참가자가 자신의 화면을 업데이트할 수 있도록 활성 사용자들의 메시지를 보냄
     state.channel!.sendMessage(AgoraRtmMessage.fromText(Message().sendActiveUsers(activeUsers: state.activeUsers)));
 
     if (state.isLive) {
@@ -246,6 +262,8 @@ class DirectorController extends StateNotifier<DirectorModel> {
     }
   }
 
+  // 음소거 활성화 여부를 메세지로 보내는 함수
+  // 메세지만 보내면 알아서 상태를 업데이트 한다.
   Future<void> toggleUserAudio({required int index, required bool muted}) async {
     if (muted) {
       //send a message to mute
@@ -255,6 +273,8 @@ class DirectorController extends StateNotifier<DirectorModel> {
     }
   }
 
+  // 비디오 활성화 여부를 메세지로 보내는 함수
+  // 메세지만 보내면 알아서 상태를 업데이트 한다.
   Future<void> toggleUserVideo({required int index, required bool enabled}) async {
     if (enabled) {
       //send a message to enabled
@@ -266,8 +286,11 @@ class DirectorController extends StateNotifier<DirectorModel> {
   }
 
   Future<void> updateUserAudio({required int uid, required bool muted}) async {
+    //singwhere : test를 만족시키는 단일 요소를 반환한다.
+    //https://api.dart.dev/stable/2.16.1/dart-core/Iterable/singleWhere.html
     AgoraUser _tempUser = state.activeUsers.singleWhere((element) => element.uid == uid);
     Set<AgoraUser> _tempSet = state.activeUsers;
+    // 음소거 활성화를 바꾼후 다시 활성화 사용자 리스트에 등록한다.
     _tempSet.remove(_tempUser);
     _tempSet.add(_tempUser.copyWith(muted: muted));
     state = state.copyWith(activeUsers: _tempSet);
@@ -276,6 +299,7 @@ class DirectorController extends StateNotifier<DirectorModel> {
   Future<void> updateUserVideo({required int uid, required bool videoDisabled}) async {
     AgoraUser _tempUser = state.activeUsers.singleWhere((element) => element.uid == uid);
     Set<AgoraUser> _tempSet = state.activeUsers;
+    // 음소거 활성화를 바꾼후 다시 활성화 사용자 리스트에 등록한다.
     _tempSet.remove(_tempUser);
     _tempSet.add(_tempUser.copyWith(videoDisabled: videoDisabled));
     state = state.copyWith(activeUsers: _tempSet);
