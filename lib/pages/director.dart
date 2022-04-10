@@ -27,8 +27,10 @@ class _DirectorState extends State<Director> {
   }
 
   Future<dynamic> showYoutubeBottomSheet(BuildContext context, DirectorController directorNotifier) async {
-    TextEditingController streamUrl = TextEditingController();
-    TextEditingController streamKey = TextEditingController();
+    // RTMP를 넣어주는 과정
+    // RTMP : https://ko.wikipedia.org/wiki/%EB%A6%AC%EC%96%BC_%ED%83%80%EC%9E%84_%EB%A9%94%EC%8B%9C%EC%A7%95_%ED%94%84%EB%A1%9C%ED%86%A0%EC%BD%9C
+    TextEditingController streamUrl = TextEditingController(); // 라이브 스트리밍을 위해 필요한 url
+    TextEditingController streamKey = TextEditingController(); // 라이브 스트리밍을 위해 필요한 key
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -45,11 +47,13 @@ class _DirectorState extends State<Director> {
               SizedBox(
                 height: 20,
               ),
+              // 스트리밍 URL 입력창
               TextField(
                 autofocus: true,
                 controller: streamUrl,
                 decoration: InputDecoration(hintText: "Stream Url"),
               ),
+              // 스트리밍 KEY 입력창
               TextField(
                 controller: streamKey,
                 decoration: InputDecoration(hintText: "Stream Key"),
@@ -61,6 +65,7 @@ class _DirectorState extends State<Director> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
+                        // 버튼을 누르면 YOUTUBE 플랫폼을 등록한다.
                         directorNotifier.addPublishDestination(StreamPlatform.youtube, streamUrl.text.trim() + "/" + streamKey.text.trim());
                         Navigator.pop(context);
                       },
@@ -76,9 +81,9 @@ class _DirectorState extends State<Director> {
     );
   }
 
-  Future<dynamic> showTwitchBottomSheet(BuildContext context, Object value, DirectorController directorNotifier) {
-    TextEditingController streamUrl = TextEditingController();
-    TextEditingController streamKey = TextEditingController();
+  Future<dynamic> showTwitchBottomSheet(BuildContext context, DirectorController directorNotifier) {
+    TextEditingController streamUrl = TextEditingController(); // 라이브 스트리밍을 위해 필요한 url
+    TextEditingController streamKey = TextEditingController(); // 라이브 스트리밍을 위해 필요한 key
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -95,11 +100,13 @@ class _DirectorState extends State<Director> {
               SizedBox(
                 height: 20,
               ),
+              // 스트리밍 URL 입력창
               TextField(
                 autofocus: true,
                 controller: streamUrl,
                 decoration: InputDecoration(hintText: "Injest Url"),
               ),
+              // 스트리밍 KEY 입력창
               TextField(
                 controller: streamKey,
                 decoration: InputDecoration(hintText: "Stream Key"),
@@ -111,7 +118,8 @@ class _DirectorState extends State<Director> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        directorNotifier.addPublishDestination(value as StreamPlatform, "rtmp://" + streamUrl.text.trim() + "/app/" + streamKey.text.trim());
+                        // 버튼을 누르면 TWITCH 플랫폼을 등록한다.
+                        directorNotifier.addPublishDestination(StreamPlatform.twitch, "rtmp://" + streamUrl.text.trim() + "/app/" + streamKey.text.trim());
                         Navigator.pop(context);
                       },
                       child: Text("Add"),
@@ -128,6 +136,7 @@ class _DirectorState extends State<Director> {
 
   Widget streamButton(StreamDestination destination) {
     switch (destination.platform) {
+      // youtube 버튼
       case StreamPlatform.youtube:
         return Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Colors.red),
@@ -139,6 +148,7 @@ class _DirectorState extends State<Director> {
           margin: const EdgeInsets.only(right: 4),
         );
 
+      //  twitch 버튼
       case StreamPlatform.twitch:
         return Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Colors.purple),
@@ -150,6 +160,7 @@ class _DirectorState extends State<Director> {
           margin: const EdgeInsets.only(right: 4),
         );
 
+      // 다른 플랫폼 버튼
       case StreamPlatform.other:
         return Container(
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Colors.black),
@@ -185,6 +196,7 @@ class _DirectorState extends State<Director> {
               BoxShadow(color: Colors.black26, blurRadius: 10)
             ],
             items: [
+              // 화상통화 연결을 종료하는 버튼
               CircularMenuItem(
                 icon: Icons.call_end,
                 color: Colors.red,
@@ -193,7 +205,9 @@ class _DirectorState extends State<Director> {
                   Navigator.pop(context);
                 },
               ),
+              // 만약 라이브 스트리밍 중이라면
               directorData.isLive
+                  // cancel 버튼을 눌러서 스트리밍을 종료시킬 수 있다.
                   ? CircularMenuItem(
                       icon: Icons.cancel,
                       color: Colors.orange,
@@ -201,14 +215,17 @@ class _DirectorState extends State<Director> {
                         directorNotifier.endStream();
                       },
                     )
+                  // 라이브 스트리밍 중이 아니라면
                   : CircularMenuItem(
                       icon: Icons.videocam,
                       color: Colors.orange,
                       onTap: () {
+                        //플랫폼이 비어있지 않다면
                         if (directorData.destinations.isNotEmpty) {
-                          directorNotifier.startStream();
+                          directorNotifier.startStream(); // 해당 플랫폼으로 스트리밍을 시작하고
                         } else {
-                          throw ("Invalid URL");
+                          // 비어있으면
+                          throw ("Invalid URL"); // Invalid URL 에러를 던진다.
                         }
                       },
                     ),
@@ -223,47 +240,74 @@ class _DirectorState extends State<Director> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             PopupMenuButton(
+                              itemBuilder: (context) {
+                                List<PopupMenuEntry<Object>> list = [];
+                                // YOUTUBE 플랫폼 버튼
+                                list.add(
+                                  makePopMenuItem(
+                                    "Youtube",
+                                    StreamPlatform.youtube,
+                                  ),
+                                );
+                                list.add(const PopupMenuDivider());
+
+                                // TWITCH 플랫폼 버튼
+                                list.add(
+                                  makePopMenuItem(
+                                    "Twitch",
+                                    StreamPlatform.twitch,
+                                  ),
+                                );
+                                list.add(const PopupMenuDivider());
+
+                                // 다른 플랫폼 버튼
+                                list.add(
+                                  makePopMenuItem(
+                                    "Other",
+                                    StreamPlatform.other,
+                                  ),
+                                );
+                                list.add(const PopupMenuDivider());
+                                return list;
+                              },
+                              icon: Icon(Icons.add),
+                              onCanceled: () {
+                                print("You have canceld menu");
+                              },
+                              onSelected: (value) {
+                                switch (value) {
+                                  case StreamPlatform.youtube:
+                                    showYoutubeBottomSheet(context, directorNotifier);
+                                    break;
+                                  case StreamPlatform.twitch:
+                                    showTwitchBottomSheet(context, directorNotifier);
+                                    break;
+                                }
+                              },
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+
+                            // 라이브 스트리밍을 중지하는 함수
+                            for (int i = 0; i < directorData.destinations.length; i++)
+                              PopupMenuButton(
                                 itemBuilder: (context) {
                                   List<PopupMenuEntry<Object>> list = [];
                                   list.add(
-                                    makePopMenuItem(
-                                      "Youtube",
-                                      StreamPlatform.youtube,
-                                    ),
+                                    const PopupMenuItem(child: ListTile(leading: Icon(Icons.remove), title: Text("Remove Stream")), value: 0),
                                   );
-                                  list.add(const PopupMenuDivider());
-
-                                  list.add(
-                                    makePopMenuItem(
-                                      "Twitch",
-                                      StreamPlatform.twitch,
-                                    ),
-                                  );
-                                  list.add(const PopupMenuDivider());
-
-                                  list.add(
-                                    makePopMenuItem(
-                                      "Other",
-                                      StreamPlatform.other,
-                                    ),
-                                  );
-                                  list.add(const PopupMenuDivider());
                                   return list;
                                 },
-                                icon: Icon(Icons.add),
+                                // 각각의 플랫폼 버튼
+                                child: streamButton(directorData.destinations[i]),
                                 onCanceled: () {
-                                  print("You have canceld menu");
+                                  print("You have canceled the menu");
                                 },
+                                // 버튼을 선택하면 그 플랫폼의 스트리밍을 종료한다.
                                 onSelected: (value) {
-                                  switch (value) {
-                                    case StreamPlatform.youtube:
-                                      showYoutubeBottomSheet(context, directorNotifier);
-                                      break;
-                                    case StreamPlatform.youtube:
-                                      break;
-                                  }
+                                  directorNotifier.removePublishDestination(directorData.destinations[i].url);
                                 },
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
                           ],
                         ),
                       ),
