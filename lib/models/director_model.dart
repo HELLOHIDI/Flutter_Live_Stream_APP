@@ -8,11 +8,11 @@ class DirectorModel {
   RtcEngine? engine; //video call을 핸들링하는 속성
   AgoraRtmClient? client; // 실시간 메시징을 하는 대상
   AgoraRtmChannel? channel; // 실시간 메시징을 하는 채널
-  Set<AgoraUser> activeUsers;
-  Set<AgoraUser> lobbyUsers;
+  Set<AgoraUser> activeUsers; // 활성 사용자 유저
+  Set<AgoraUser> lobbyUsers; // 로비 사용자 유저
   AgoraUser? localUser;
-  bool isLive;
-  List<StreamDestination> destinations;
+  bool isLive; // 라이브 스트리밍 여부
+  List<StreamDestination> destinations; // 라이브 스트리밍을 할 플랫폼 리스트
 
   // 생성자
   DirectorModel({
@@ -30,7 +30,6 @@ class DirectorModel {
   // class는 메모리 누수를 방지하고자 기본적으로 mutable로 설계
   // 새로운 객체로 데이터를 copy 해서 넘겨줘야 한다는 소리
   // 새로운 객체를 만들고 데이터를 옮겨 주거나 , 기존의 User 객체에 copy 메서드를 만들어서 변경한 데이터만 바꿔서 새로 만들어 넘겨주는 방식을 사용하면 됩니다. 이러한 방식이 방어적인 대응
-  
 
   // => 이렇게 하면 개체 내에서 한 가지를 변경할 수 있지만 개체는 여전히 남아 있습니다.
   DirectorModel copyWith({
