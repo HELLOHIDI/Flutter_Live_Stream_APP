@@ -187,8 +187,9 @@ class DirectorController extends StateNotifier<DirectorModel> {
     //참가자가 자신의 화면을 업데이트할 수 있도록 활성 사용자들의 메시지를 보냄
     state.channel!.sendMessage(AgoraRtmMessage.fromText(Message().sendActiveUsers(activeUsers: state.activeUsers)));
 
+    // 라이브 스트리밍 여부가 true면
     if (state.isLive) {
-      updateStream();
+      updateStream(); //updateStream을 해준다.
     }
   }
 
@@ -228,8 +229,9 @@ class DirectorController extends StateNotifier<DirectorModel> {
     //참가자가 자신의 화면을 업데이트할 수 있도록 활성 사용자들의 메시지를 보냄
     state.channel!.sendMessage(AgoraRtmMessage.fromText(Message().sendActiveUsers(activeUsers: state.activeUsers)));
 
+    // 라이브 스트리밍 여부가 true면
     if (state.isLive) {
-      updateStream();
+      updateStream(); //updateStream을 해준다.
     }
   }
 
@@ -257,8 +259,9 @@ class DirectorController extends StateNotifier<DirectorModel> {
     //참가자가 자신의 화면을 업데이트할 수 있도록 활성 사용자들의 메시지를 보냄
     state.channel!.sendMessage(AgoraRtmMessage.fromText(Message().sendActiveUsers(activeUsers: state.activeUsers)));
 
+    // 라이브 스트리밍 여부가 true면
     if (state.isLive) {
-      updateStream();
+      updateStream(); //updateStream을 해준다.
     }
   }
 
@@ -307,6 +310,8 @@ class DirectorController extends StateNotifier<DirectorModel> {
 
   Future<void> startStream() async {
     List<TranscodingUser> transcodingUsers = [];
+
+    // 트랜스코딩
     if (state.activeUsers.isEmpty) {
     } else if (state.activeUsers.length == 1) {
       transcodingUsers.add(TranscodingUser(state.activeUsers.elementAt(0).uid, x: 0, y: 0, width: 1920, height: 1080, zOrder: 1, alpha: 1));
@@ -362,6 +367,8 @@ class DirectorController extends StateNotifier<DirectorModel> {
       height: 1080,
     );
     state.engine!.setLiveTranscoding(transcoding);
+
+    // 등록된 플랫폼에 라이브 스트리밍을 순차적으로 시작한다.
     for (int i = 0; i < state.destinations.length; i++) {
       print("STREAMING TO: ${state.destinations[i].url}");
       state.engine!.addPublishStreamUrl(state.destinations[i].url, true);
@@ -421,6 +428,7 @@ class DirectorController extends StateNotifier<DirectorModel> {
       throw ("too many members");
     }
 
+    // 업데이트 해준다.(만약 새로운 참가자가 추가되는 상황같은 경우에)
     LiveTranscoding transcoding = LiveTranscoding(
       transcodingUsers,
       width: 1920,
@@ -429,19 +437,29 @@ class DirectorController extends StateNotifier<DirectorModel> {
     state.engine!.setLiveTranscoding(transcoding);
   }
 
+  // 라이브 스트리밍을 종료하는 함수
   Future<void> endStream() async {
+    // 해당 플랫폼의 라이브 스트리밍을 종료한다.
     for (int i = 0; i < state.destinations.length; i++) {
       state.engine!.removePublishStreamUrl(state.destinations[i].url);
     }
 
+    // 라이브 스트리밍 여부를 false로 업데이트 한다.
     state = state.copyWith(isLive: false);
   }
 
+  // stream platform을 추가하는 함수
   Future<void> addPublishDestination(StreamPlatform platform, String url) async {
+    // 라이브 스트리밍이 중이면
     if (state.isLive) {
-      state.engine!.addPublishStreamUrl(url, true);
+      // 새로 추가할 url을 추가하고, transcoding 여부를 true로 한다.
+      // https://blog.naver.com/PostView.naver?blogId=dna2073&logNo=221111113511&redirect=Dlog&widgetTypeCall=true&directAccess=false
+      // transcoding : 재생하는 디바이스(디바이스=재생장치=스마트폰, PC)가
+      // 영상의 코덱을 지원할지 못할때..   실시간으로 인코딩을 하여 재생이  가능하도록 해주는것
+      state.engine!.addPublishStreamUrl(url, true); //url을 추가한다.
     }
 
+    // 기존의 플랫폼에 새로 추가할 플랫폼을 합병한다(스프래드 연산자)
     state = state.copyWith(destinations: [
       ...state.destinations,
       StreamDestination(platform: platform, url: url)
@@ -449,15 +467,19 @@ class DirectorController extends StateNotifier<DirectorModel> {
   }
 
   Future<void> removePublishDestination(String url) async {
+    // 라이브 스트리밍 중이면
     if (state.isLive) {
+      // 삭제할 url을 추가한다.
       state.engine!.removePublishStreamUrl(url);
     }
 
+    // 반복문을 돌면서
     List<StreamDestination> temp = state.destinations;
     for (int i = 0; i < temp.length; i++) {
       if (temp[i].url == url) {
-        temp.removeAt(i);
-        state = state.copyWith(destinations: temp);
+        // 삭제하고자 할 플랫폼의 url을 찾는다면
+        temp.removeAt(i); // 삭제하고
+        state = state.copyWith(destinations: temp); // 삭제한 리스트로 update한다.
         return;
       }
     }
