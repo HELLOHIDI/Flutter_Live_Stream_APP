@@ -53,110 +53,110 @@
 
 <h3>📁 models</h3>
 
-  - **📃 direcotr_controller.dart** : 
+  - **📃 direcotr_controller.dart** : 디렉터 스크린을 조종하고 제어하는 파일
       |🛠 함수명|기능|
       |---|---|
-      |_initialize||
-      |joinCall||
-      |leaveCall||
-      |addUserToLobby||
-      |promoteToActiveUser||
-      |demoteToLobbyUser||
-      |removeUser||
-      |toggleUserAudio||
-      |toggleUserVideo||
-      |updateUserAudio||
-      |updateUserVideo||
-      |startStream||
-      |updateStream||
-      |endStream||
-      |addPublishDestination||
-      |removePublishDestination||
+      |_initialize|director controller 파일을 시작할 때 초기화하는 함수|
+      |joinCall|화상통화에 참여하는 |
+      |leaveCall|화상통화를 종료하는 함수|
+      |addUserToLobby|로비에 사용자를 추가하는 함수|
+      |promoteToActiveUser|로비 사용자를 화상 통화 활성 사용자로 승격시키는 함수|
+      |demoteToLobbyUser|화상 통화 활성 사용자를 로비 사용자로 강등시키는 함수|
+      |removeUser|로비와 화상통화에서의 사용자를 같이 지우는 함수|
+      |toggleUserAudio|음소거 활성화 여부를 메세지로 보내는 함수|
+      |toggleUserVideo|비디오 활성황 여부를 메세지로 보내는 함수|
+      |updateUserAudio|음소거 활성화 여부를 업데이트 하는 함수|
+      |updateUserVideo|비디오 활성화 여부를 업데이트 하는 함수|
+      |startStream|라이브 스트리밍을 시작하는 함수|
+      |updateStream|라이브 스트리밍을 업데이트 하는 함수|
+      |endStream|라이브 스트리밍을 종료하는 함수|
+      |addPublishDestination|스트리밍 플랫폼을 추가하는 함수|
+      |removePublishDestination|스트리밍 플랫폼을 제거하는 함수|
 
 <h3>📁 models</h3>
 
-  - **📃 direcotr_model.dart** : 
+  - **📃 direcotr_model.dart** : 디렉터 객체를 모델링하는 파일
       |🔑 속성명|역할|
       |---|---|
-      |RtcEngine? engine||
-      |AgoraRtmClient? client||
-      |AgoraRtmChannel? channel||
-      |Set<AgoraUser> activeUsers||
-      |Set<AgoraUser> lobbyUsers||
+      |RtcEngine? engine|video call을 핸들링하는 속성|
+      |AgoraRtmClient? client|실시간 메시징을 하는 대상|
+      |AgoraRtmChannel? channel|실시간 메시징을 하는 채널|
+      |Set<AgoraUser> activeUsers|활성 사용자 유저|
+      |Set<AgoraUser> lobbyUsers|로비 사용자 유저|
       |AgoraUser? localUser||
-      |bool isLive||
-      |List<StreamDestination> destinations||
+      |bool isLive|라이브 스트리밍 여부|
+      |List<StreamDestination> destinations|라이브 스트리밍을 할 플랫폼 리스트|
       
    
-   - **📃 stream.dart** : 
+   - **📃 stream.dart** : 스트리밍 플랫폼 객체를 모델링하는 파일
       |🔑 속성명|역할|
       |---|---|
-      |StreamPlatform platform||
-      |String url||
+      |StreamPlatform platform|라이브 스트리밍 플랫폼|
+      |String url|라이브 스트리밍 url|
    
-   - **📃 user.dart** : 
+   - **📃 user.dart** : 참가자 객체를 모델링하는 파일
       |🔑 속성명|역할|
       |---|---|
-      |int uid||
-      |bool muted||
-      |bool videoDisabled||
-      |String? name||
-      |Color? backgroundColor||
+      |int uid|USER ID(이걸 통해서 모든걸 조작한다.)|
+      |bool muted|음소거 여부|
+      |bool videoDisabled|비디오 활성화 여부|
+      |String? name|사용자 프로필 이름|
+      |Color? backgroundColor|사용자 프로필 배경색|
 
 <h3>📁 pages</h3>
 
-  - **📃 director.dart** : 
+  - **📃 director.dart** : 관리자 스크린 파일
       - |📦 클래스명|클래스 역할|🔑 속성/역할|
         |---|---|---|
-        |StageUser||DirectorModel directorData :<br>DirectorController directorNotifier<br>int index|
-        |LobbyUser||DirectorModel directorData :<br>DirectorController directorNotifier<br>int index|
+        |StageUser|화상통화 사용자를 관리하는 클래스|**DirectorModel directorData** : director model provider로 현재의 데이터를 얻을 수 있음.<br>**DirectorController directorNotifier** : <br>**int index** : 사용자 인덱스|
+        |LobbyUser|로비 사용자를 관리하는 클래스|**DirectorModel directorData** : director model provider로 현재의 데이터를 얻을 수 있음.<br>**DirectorController directorNotifier** : <br>**int index** : 사용자 인덱스|
       
       - |🛠함수명|기능|
         |---|---|
-        |initState||
-        |showYoutubeBottomSheet||
-        |showTwitchBottomSheet||
-        |streamButton||
+        |initState|관리자 스크린 파일을 시작할 때 초기화 함수|
+        |showYoutubeBottomSheet|youtube 라이브 스트리밍을 연결하는 함수|
+        |showTwitchBottomSheet|twitch 라이브 스트리밍을 연결하는 함수|
+        |streamButton|다른 플랫폼 라이브 스트리밍을 연결하는 함수|
 
       
-  - **📃 home.dart** :
+  - **📃 home.dart** : 홈 스크린
       - |📦 클래스명|클래스 역할|🔑 속성/역할|
         |---|---|---|
-        |_HomeState||final _channelName :<br>final _userName: <br>late int uid: |
+        |_HomeState|홈 스크린 상태관리를 하는 클래스|**final _channelName** : 채널 입력창 <br>**final _userName** : 사용자 이름 입력창<br>**late int uid** : user uid |
         
       
       - |🛠 함수명|기능|
         |---|---|
-        |initState||
-        |getUserUid||
+        |initState|홈 스크린이 시작될 때 초기화 함수|
+        |getUserUid|사용자의 uid를 가져오는 함수|
       
-  - **📃 participant.dart** :
+  - **📃 participant.dart** : 화상 통화 참가자 스크린
       - |📦 클래스명|클래스 역할|🔑 속성/역할|
         |---|---|---|
-        |_ParticipantState||List<AgoraUser> _users :<br> late RtcEngine _engine: <br>AgoraRtmClient? _client: <br> AgoraRtmChannel? _channel:<br> bool muted:<br> bool videoDisabled:<br> bool localUserActive:<br>|
+        |_ParticipantState|참가자 스크린 상태관리를 하는 클래스|**List<AgoraUser> _users** : 화상 통화 사용자 리스트 <br> **late RtcEngine _engine** : video call을 핸들링하는 변수<br>**AgoraRtmClient? _client** : 실시간 메시징을 하는 대상<br> **AgoraRtmChannel? _channel** : 실시간 메시징을 하는 채널<br> **bool muted** : 음소거 여부<br> **bool videoDisabled** : 화면 재생 여부<br> **bool localUserActive** : 메인 페이지에 있는지 아닌지를 알기 위해 활성 사용자라는 변수<br>|
   
       - |🛠 함수명|기능|
         |---|---|
-        |initState||
-        |dispose||
-        |_toolbar||
-        |_expandedVideoView||
-        |_broadcastView||
-        |_getRenderViews||
-        |_onToggleMute||
-        |_onToggleVideoDisabled||
-        |_onSwitchCamera||
-        |_onCallEnd||
+        |initState|참가자 스크린이 시작될 때 초기화 함수|
+        |dispose|다시 시작할 때 새로운 slate을 얻을 수 있도록 모든 영상 통화와 전체 RTM 연결을 처분하는 함수|
+        |_toolbar|툴바를 제작하는 함수|
+        |_expandedVideoView|비디오를 감싸는 가로 위젯을 제작하는 함수|
+        |_broadcastView|비디오를 감싸는 위젯을 제작하는 함수|
+        |_getRenderViews|기본 보기 목록을 가져오는 도우미 기능을 제작하는 함수|
+        |_onToggleMute|음소거 여부를 결정하는 함수|
+        |_onToggleVideoDisabled|비디오 활성화 여부를 결정하는 함수|
+        |_onSwitchCamera|카메라 방향을 결정하는 함수|
+        |_onCallEnd|화상통화를 종료하는 함수|
 <h3>📁 utils</h3>
 
-  - **📃 appId.dart** : 
+  - **📃 appId.dart** : appId를 저장하는 파일
       
       
-  - **📃 message.dart** : 
+  - **📃 message.dart** : 활성 사용자 목록을 쉽게 보낼 수 있도록 하는 파일
       |🛠 함수명|기능|
       |---|---|
-      |sendActiveUsers||
-      |parseActiveUsers||
+      |sendActiveUsers|활성 사용자의 uid를 string 형으로 보내는 함수|
+      |parseActiveUsers|string형의 활성 사용자의 uid를 리스트로 파싱하는 함수|
       
 <!---- 아직 완성 x 
 # Key Features
