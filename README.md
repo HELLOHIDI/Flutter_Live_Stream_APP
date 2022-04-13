@@ -160,6 +160,7 @@
       
 <!---- 아직 완성 x 
 # Key Features
+ex)------------------------------------------------------------------------------
 <h2>1. Flutter&Firebase 연동</h2>
 Firebase의 DB라 볼 수 있는 firestore을 사용하였다. 이를 사용하기 위해서 cloud_firestoredhk firebase_core 패키지를 설치하였다.
 영화 더미 데이터들을 firebase 데이터베이스에 추가해두고 이를 활용하는 식으로 구현을 했다.<br/>
@@ -211,6 +212,12 @@ void main() async {
 </details>
 
 ------------------------------------------
+1. participate : initializeAgora() 
+2. 음성 활성화 되는 부분 -> 끄는 부분
+3. 사용자 로비 -> 활성 사용자되는 부분
+4. 라이브 스트리밍 켜는 -> 꺼는 부분
++) copy_with 부분
+
 
 <h3>1-2. model_movie.dart</h3>
 <pre>
