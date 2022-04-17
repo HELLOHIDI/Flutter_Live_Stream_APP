@@ -158,28 +158,27 @@
       |sendActiveUsers|활성 사용자의 uid를 string 형으로 보내는 함수|
       |parseActiveUsers|string형의 활성 사용자의 uid를 리스트로 파싱하는 함수|
       
-<!---- 아직 완성 x 
+
 # Key Features
 ex)------------------------------------------------------------------------------
-<h2>1. Flutter&Firebase 연동</h2>
-Firebase의 DB라 볼 수 있는 firestore을 사용하였다. 이를 사용하기 위해서 cloud_firestoredhk firebase_core 패키지를 설치하였다.
-영화 더미 데이터들을 firebase 데이터베이스에 추가해두고 이를 활용하는 식으로 구현을 했다.<br/>
-
-<h3>1-1. main.dart</h3>
+<h2>1. Participate 中 initializeAgora() part</h2>
+Agora Real-time Messaging API를 사용하기 위해 필요한 엔진과 클라이언트를 연결 구축하는 기능이다.
+ 
+<h3>1-1. participate.dart</h3>
 <pre>
 <code>
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // --- ①
-  await Firebase.initializeApp( // --- ②
-    options: FirebaseOptions( // --- ③
-      apiKey: "AIzaSyAmJXArzo8jgQGZVAhJdzrYtoOBchZ1VLU", // Your apiKey
-      appId: "1:980877547437:android:90f18890410accd06a3324", // Your appId
-      messagingSenderId: "980877547437", // Your messagingSenderId
-      projectId: "netflix-clone-test-4bbcf", // Your projectId
-    ),
-  );
-  runApp(MyApp());
-}
+  Future<void> initializeAgora() async {
+    _engine = await RtcEngine.createWithContext(RtcEngineContext(appId)); --- ①
+    _client = await AgoraRtmClient.createInstance(appId); --- ②
+    await _engine.enableVideo(); --- ③
+    await _engine.setChannelProfile(ChannelProfile.LiveBroadcasting); --- ④
+    await _engine.setClientRole(ClientRole.Broadcaster); --- ⑤
+   // Join the RTM and RTC channels --- ⑥
+   await _client?.login(null, widget.uid.toString());
+   _channel = await _client?.createChannel(widget.channelName);
+   await _channel?.join(); // 참여
+   await _engine.joinChannel(null, widget.channelName, null, widget.uid);
+   
 </code>
 </pre>
 
@@ -187,30 +186,32 @@ void main() async {
 <details>
  <summary> 🔍 자세히 분석하기 </summary>
 
-### ① WidgetsFlutterBinding.ensureInitialized() 
-    firebase를 사용하기 위해서는 main파일에서 WidgetsFlutterBinding.ensureInitialized()을 사용하여 초기화를 해줘야 된다.
+### ① _engine = await RtcEngine.createWithContext(RtcEngineContext(appId))
+    Agora Real-time Messaging API를 사용하기 위한 실제 엔진을 만든다.
+    이때 Agore에서 제작된 appID가 필요하다.
     
-    그 이유는 Flutter는 main 메소드를 앱의 시작점으로 사용한다. 그렇기에 runApp 메소드의 시작 지점에서 
-    Flutter 엔진과 위젯의 바인딩이 미리 완료되어있어야 한다.
     
-    즉 main 메소드에서 서버나 SharedPreferences 등 비동기로 데이터를 다룬 다음 runApp을 실행해야하는 경우, 
-    async-await와 함께 WidgetsFlutterBinding.ensureInitialized()을 반드시 추가해주어야 한다.
-    
-### ② Firebase.initializeApp()
-    Firebase 서비스를 사용하려면 먼저 FlutterFire를 초기화해야 합니다. 
-    
-    Firebase.initializeApp()는 FlutterFire CLI를 사용하여 지원되는 모든 플랫폼에 대해 
-    얻을 수 있는 Firebase 프로젝트 애플리케이션 구성을 수락합니다.
+### ② _client = await AgoraRtmClient.createInstance(appId)
+    AgoraRtm 클라이언트를 생성한다.
+    이때 Agore에서 제작된 appID가 필요하다.
 
-### ③ options: FirebaseOptions()
-    firebase app의 보조 기능을 사용할때는 option을 추가해주어야 된다.
+### ③ await _engine.enableVideo()
+    코어 RTC는 오디오로만 시작하게 초기화되어있다.
+    그래서 비디오를 활성화시키는 코드를 추가했다.
     
-    이 프로젝트에서는 cloud firestore을 사용했기에 option값을 넣어 주어야 한다.
+### ④ await _engine.setChannelProfile(ChannelProfile.LiveBroadcasting)
+    세개의 프로필(생방송, 일반 영상통화, 게임) 중 생방송을 활성화시킨다.
     
-    optiondpsms apiKey, appId, messagingSenderId, projectId를 기입해주어야 된다.
-
+### ⑤ await _engine.setClientRole(ClientRole.Broadcaster)
+    2개의 역할(방송자, 시청자) 중 방송자를 활성화 시킨다.
+    
+### ⑥ Join the RTM and RTC channels
+    - uid를 통해 로그인 (이때 uid값을 string형으로 전환해줘야된다.)
+    - 화상통화를 할 채널을 생성한다.
+    - 생성된 채널에 참여하는 callback함수를 호출한다(다시 알아보기)
+    - 채널에 참여하는데 이때 Rtm client와 매칭을 하기 위해서 매개변수로 채널명과 uid를 넣어준다.
 </details>
-
+<!---- 아직 완성 x 
 ------------------------------------------
 1. participate : initializeAgora() 
 2. 음성 활성화 되는 부분 -> 끄는 부분
