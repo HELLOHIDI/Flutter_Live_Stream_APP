@@ -160,7 +160,12 @@
       
 
 # Key Features
-ex)------------------------------------------------------------------------------
+
+3. 사용자 로비 -> 활성 사용자되는 부분
+4. 라이브 스트리밍 켜는 -> 꺼는 부분
++) copy_with 부분
+ 
+ 
 <h2>1. Participate 中 initializeAgora() part</h2>
 Agora Real-time Messaging API를 사용하기 위해 필요한 엔진과 클라이언트를 연결 구축하는 기능이다.
  
@@ -211,87 +216,50 @@ Agora Real-time Messaging API를 사용하기 위해 필요한 엔진과 클라�
     - 생성된 채널에 참여하는 callback함수를 호출한다(다시 알아보기)
     - 채널에 참여하는데 이때 Rtm client와 매칭을 하기 위해서 매개변수로 채널명과 uid를 넣어준다.
 </details>
-<!---- 아직 완성 x 
-------------------------------------------
-1. participate : initializeAgora() 
-2. 음성 활성화 되는 부분 -> 끄는 부분
-3. 사용자 로비 -> 활성 사용자되는 부분
-4. 라이브 스트리밍 켜는 -> 꺼는 부분
-+) copy_with 부분
 
 
-<h3>1-2. model_movie.dart</h3>
+
+-------------------------------------------
+
+<h2>2. 참가자 음성 활성화 기능</h2>
+화상 통화에는 음성 활성화, 비디오 활성화, 카메라 방향 전환, 전화 끊기 등 다양한 기능이 있지만
+모두 같은 메커니즘으로 움직이기 때문에 음성 활성화 기능을 대표적인 예시로 참가자 화면의 기능을 설명하겠다.<br>
+
+참가자의 음성 활성화 기능을 설정하는 방법은 크게 두가지이다.<br>
+첫번째는 참가자 화면에서 직접 버튼을 통해 음성기능 활성화를 조작하는 범이고,<br>
+두번째는 디렉터 화면에서 직접 참가자의 음성 기능 활성화 여부를 통제하는 방법이다.
+
+
+
+<h3> 2-1. participate.dart 中 _onToggleMute() & _toolbar() part </h3>
 <pre>
-<code> 
-import 'package:cloud_firestore/cloud_firestore.dart';
-class Movie { // --- ①
-  final String title;
-  final String keyword;
-  final String poster;
-  final bool like;
-  final String actor;
-  final String producer;
-  
-  final DocumentReference reference; // --- ②
+<code>
 
-  Movie.fromMap(Map<String, dynamic> map, {required this.reference}) // --- ①
-      : title = map['title'],
-        keyword = map['keyword'],
-        poster = map['poster'],
-        like = map['like'],
-        actor = map['actor'],
-        producer = map['producer'];
-
-  Movie.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference); // --- ③
-
-  @override
-  String toString() => "Movie<$title:$keyword>"; // --- ④
-
-  String toOfficials() => "출연 : ${actor}\n제작자 : ${producer}"; // --- ④
+class _ParticipantState extends State<participant> {
+bool muted = false; // 음소거 여부 --- ①
+bool localUserActive = false; //메인 페이지에 있는지 아닌지를 알기 위해 활성 사용자라는 변수 --- ①
+...
+localUserActive --- ②
+   ? RawMaterialButton( --- ②
+       onPressed: _onToggleMute,
+       child: Icon(
+         muted ? Icons.mic_off : Icons.mic,
+         color: muted ? Colors.white : Colors.blueAccent,
+         size: 20.0,
+       ),
+       shape: CircleBorder(),
+       elevation: 2.0,
+       fillColor: muted ? Colors.blueAccent : Colors.white,
+       padding: const EdgeInsets.all(12.0),
+     )
+   : SizedBox(), --- ②
+...
+void _onToggleMute() { 
+ setState(() { --- ③
+   muted = !muted;
+ });
+ _engine.muteLocalAudioStream(muted); --- ④
 }
-
-</code>
-</pre>
-
-<details>
- <summary> 🔍 자세히 분석하기 </summary>
- 
- ### ① Movie class member variable & Movie.fromMap()
-     model_movie.dart 파일에 title,keyword, poster, like, actor, producer의 멤버변수를 설정하고,
-     
-     Movie.fromMap()을 통해 named 생성자를 구현했다.
-     
- ### ② final DocumentReference reference
-     실제 Firebase firestore에 있는 데이터 컬럼을 참조할 수 있는 링크이고,
-     
-     reference를 이용해 해당 데이터에 대한 CRUD 기능을 간단히 처리 가능하다.
-
- ### ③ fromsnapshot() 
-     named 생성자를 reference 멤버변수의 named 생성자를 구현했다.
- 
- ### ④ toString(), toOfficials()
-     각각 영화소개와 관계자 텍스트를 반환하는 메소드.
-
-</details>
-
-**********************************************************************
-
-<h2> 2. home화면에 영화위젯 출력</h2>
-home screen에 firestore에 만들어놓은 영화 더미 데이터들을 출력하기 위해서 
-_fetchData() 함수에서 streamData로부터 데이터를 추출하고 _buildBody() 함수를 통해
-추출한 영화 더미 데이터를 실제 위젯으로 만들었다.
-
-<h3> 2.1 class _HomeScreenState extends State<HomeScreen> </h3>
-<pre>
-<code>
-class _HomeScreenState extends State<HomeScreen> {
-  FirebaseFirestore firestore = FirebaseFirestore.instance; // --- ①
-  late Stream<QuerySnapshot> streamData; // --- ②
-  @override
-  void initState() {
-    super.initState();
-    streamData = firestore.collection('movie').snapshots(); // --- ③
-  }  
 </code>
 </pre>
 
@@ -299,59 +267,50 @@ class _HomeScreenState extends State<HomeScreen> {
 <details>
 <summary> 🔍 자세히 분석하기 </summary>
 
-### ① FirebaseFirestore.instance
-    FirebaseFirestore.instance 를 호출하여 인스턴스를 얻을 수 있다.
+### ① bool muted & bool localUserActive
+    - bool muted : 음소거 여부를 결정하는 변수 (초기값 = false)
+    - bool localUserActive : 해당 사용자가 활성 사용자인지를 알려주는 변수 (초기값 = false)
+    
+### ② Muted button part
+    1. 만약 활성 사용자이라면, 누르면 _onToggleMute함수를 호출하는 버튼을 보여준다.
+    2. 아니라면 공백으로 남긴다.
+    
+### ③ setState muted part
+- 제작한 음소거 버튼을 누르면 setState()를 통해 muted 변수의 값을 반대로 변경해준다.  
 
-### ② late Stream<QuerySnapshot> streamData
-    QuerySnapshot은 collection으로부터 Query, snapshot을 통해 받아온 데이터 타입으로서
-    
-    사실상 snapshot은 비동기(이기 때문에 late 사용) 로 실제 서버 데이터를 가져온 내용들이다.
-    
-    즉 Collection으로 부터 특정 Document들을 가져왔기에 하나씩 까봐야 한다. 
-    
-### ③ firestore.collection('movie').snapshots();
-    FireStore에서는 2가지의 Read 방식이 존재한다
-    1. one-time Read : 한번 읽는 방식
-    2. Real-time Read : stream을 이용해 변경되는 사항을 Stream으로 넘겨주워
-    실시간 반영이 이루어진다. 
-    
-    Collection의 Stream을 받아서 전체 Documents의 변경 사항을 실시간으로 받을 수 있고
-    Document의 Stream을 받아서 하나의 Document의 변경 사항을 받을 수도 있다
-    
-    snapshots()은 real-time Read를 위한 Stream을 받아오는 함수이다.
-    
-    여기서 우리는 Collection 내에 저장되어 있는 모든 문서의 영화 데이터가 필요하기에 
-    컬렉션 이름인 movie의 데이터를 .collection.snapshots()으로 받았다.
+### ④ _engine.muteLocalAudioStream(muted)
+ - 실제로 음소거를 할 수 있도록 RtcEngine 변수에 해당 라이브러리에서 제공하는 함수를 적용한다.
+ - invokeMethod를 통해 해당 라이브러리의 메소드를 불러온다 -> 모르는 개념 정리에서 공부하기!
+ <pre>
+ <code>
+ @override
+   Future<void> muteLocalAudioStream(bool muted) {
+     return _invokeMethod('muteLocalAudioStream', {
+       'muted': muted,
+     });
+   }
+ </code>
+ </pre>
 </details>
 
-<h3> 2-2. _fetchData() & _buildBody() </h3>
+
+<h3> 2-2. director_controller.dart code & participate.dart 中 onMessageReceived() part</h3>
 <pre>
 <code>
-Widget _fetchData(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>( // --- ①
-      stream: FirebaseFirestore.instance.collection('movie').snapshots(),
-      builder: (context, snapshot) { // --- ②
-        if (!snapshot.hasData) return LinearProgressIndicator();
-        return _buildBody(context, snapshot.data!.docs); // --- ③
-      },
-    );
-  }
-  
-  Widget _buildBody(BuildContext context, List<DocumentSnapshot> snapshot) {
-    List<Movie> movies = snapshot.map((d) => Movie.fromSnapshot(d)).toList();
-    return ListView(
-      children: [
-        Stack(
-          children: [
-            CarouselImage(movies: movies),
-            TopBar(),
-          ],
-        ),
-        CircleSlider(movies: movies),
-        BoxSlider(movies: movies),
-      ],
-    );
-  }
+> director_controller.dart
+state.channel!.sendMessage(AgoraRtmMessage.fromText("mute $uid")); --- ①
+> participate.dart 中 onMessageReceived()
+_channel?.onMessageReceived = (AgoraRtmMessage message, AgoraRtmMember member) { 
+      List<String> parsedMessage = message.text.split(" "); --- ②
+      switch (parsedMessage[0]) { --- ③
+        case "mute":
+          if (parsedMessage[1] == widget.uid.toString()) { --- ③
+            setState(() {
+              muted = true;
+            });
+            _engine.muteLocalAudioStream(true); --- ④
+          }
+          break;
 </code>
 </pre>
 
@@ -359,140 +318,36 @@ Widget _fetchData(BuildContext context) {
 <details>
 <summary> 🔍 자세히 분석하기 </summary>
 
-### ① StreamBuilder<QuerySnapshot>
-    Stream 과의 상호 작용에 대한 최신 스냅샷을 기반으로 자체적으로 빌드되는 위젯으로
-    받아온 Stream을 화면에 구성하기 위해 사용했다.
+### ① state.channel!.sendMessage(AgoraRtmMessage.fromText("unmute $uid"))
+    디렉터 컨트롤러에서 AgoraRtmChannel 타입 변수 메소드를 사용해서<br>
+    해당 명령(mute or unmute)와 uid를 보낸다.
+
+### ② List<String> parsedMessage = message.text.split(" ")
+    참가자 측에서 onMessageReceived()함수로 메세지를 받은것이 확인되면
+    해당 메세지를 빈칸에 맞추어 파싱해서 명령어와 uid를 구분한 요소의 리스트를 만든다.
     
-### ② builder part
-    직접적으로 빌드하는 part로서 데이터가 없으면 로딩화면, 있으면 _buildBody를 호출하여 실제 위젯을 만들어준다.
+### ③ switch-case part
+     case문을 통해서 명령어(parsedMessage[0]을 확인하고 if문으로 사용자 uid(parsedMessage[1])를
+     확인하여 muted의 true/false를 설정해준다.
 
-### ③ snapshot.data!.docs
-    docs는 QuerySnapshot의 내부 데이터 리스트에 접근하는거로써
-    우리가 만들어둔 실제 영화 데이터를 모아둔 리스트에 접근하는 것이다.
-
-### ④ List<Movie> movies = snapshot.map((d) => Movie.fromSnapshot(d)).toList()
-    movies를 선언해 snapshot으로부터 데이터를 가져온다
-    
-    Movie.fromSnapshot() 메소드를 통해 데이터를 Movie모델의 형태로 바꿔주고,
-    
-    map을 통해 기존 snapshot(snapshot.data!.docs)을 기반으로 새로운 리스트를 생성해주고
-    
-    toList()를 통해 리스트로 선언해준다.
-
-</details>
-
----------------------------------------------------------
-
-
-<h2> 3. search_screen의 검색한 영화 출력 & like_screen의 찜한 영화 출력 </h2>
-search_screen에서 검색하고자 하는 영화의 텍스트와 같은 영화를 출력하고
-like_screen에서 찜하기를 한 영화를 출력함으로써 
-영화 데이터를 필터링을 해서 화면에 출력하였다.
-
-<h3> 3-1. search_screen.dart</h3>
-<pre>
-<code>
-class _SearchScreenState extends State<SearchScreen> {
-  final TextEditingController _filter = TextEditingController(); // --- ①
-  FocusNode focusNode = FocusNode(); // --- ①
-  String _searchText = ""; // --- ①
-
-  _SearchScreenState() { // --- ②
-    _filter.addListener(() {
-      setState(() {
-        _searchText = _filter.text;
-      });
-    });
-  }
-  
-  Widget _buildBody(BuildContext context) //2-2-2의 _fetchData()와 같은 기능임으로 설명 생략
-  
-  Widget _buildList(BuildContext context, List<DocumentSnapshot> snapshot) { // --- ③
-    List<DocumentSnapshot> searchResults = [];
-    for (DocumentSnapshot d in snapshot) {
-      if (d.data().toString().contains(_searchText)) {
-        searchResults.add(d);
-      }
-    }
-
-    return Expanded( // --- ④
-      child: GridView.count(
-        crossAxisCount: 3, // 한 줄에 3개
-        childAspectRatio: 1 / 1.5, // 1/1.5 비율의 위젯을 만들어줌
-        padding: EdgeInsets.all(3),
-        children: searchResults.map((data) => _buildListItem(context, data)).toList(),
-      ),
-    );
-  }
-  
-  Widget _buildListItem(BuildContext context, DocumentSnapshot data)
-  // 받아온 데이터를 기준으로 영화 모델로 변환하여 버튼 위젯으로 만드는 과정
-  // 버튼을 누르면 detail_screen으로 넘어감 (버튼은 각 포스터 사진을 자식으로 한 InkWell )
-</code>
-</pre>
-
-
-<details>
- <summary> 🔍 자세히 분석하기 </summary>
- 
- ### ① _SearchScreenState 선언
-     _filter는 TextEditingController()로 검색 위젯을 컨트롤 하는 위젯이다.
-
-     focusNode는 현재 검색 위젯에 커서가 있는지에 대한 상태를 가지고 있는 위젯이다.
-
-     _searchText는 현재 입력되는 문자열을 나타낸다.
- 
- ### ② _SearchScreenState()
-     _filter.addListener()을 통해서 리스너를 등록하고
-     현재 문자열을 리스너의 텍스트 값으로 대입한다.
- 
- ### ③ _buildList()
-     _buildList()함수는 _buildListItem()함수에서 만든 검색어에 해당되는 영화 위젯 버튼을 넣어주는 테두리를 만드는 함수이다
-
-     searchResult는 searchText가 포함된 텍스트를 가진 영화들을 필터링해서 넣는 리스트이며,
-
-     내부 데이터 리스트를 돌면서 _searchText를 포함하고 있는 영화를 리스트에 추가해준다
-
-     이때 .data().toString()으로 형변환을 해주어서 문자열로 비교할 수 있도록 해준다.
- 
- 
- ### ④ Expanded 위젯
-     GridView.count를 통해서 한줄에 3개 1:1.5 비율을 가지는 판을 제작해준다.
-     
-     이때 들어갈 아이템들은 searchResults에 해당되는 데이터들이며 
-     
-     각각의 영화 데이터를 _buildListItem()을 호출하여 위젯으로 제작한다.
- 
- 
-</details>
-
-<h3> 3-2. like_screen.dart</h3>
-
-<pre>
-<code>
-Widget _buildBody(BuildContext context) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('movie').where('like', isEqualTo: true).snapshots(), --- ①
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return LinearProgressIndicator();
-        return _buildList(context, snapshot.data!.docs); 
-      },
-    );
-  }
-</code>
-</pre>
-
-
-<details>
-<summary> 🔍 자세히 분석하기 </summary>
-
-### ① stream part
-
-배열의 요소를 필터링 하기 위해 where함수를 사용했다.
-.where을 통해 like:true(isEqualTo: true)인 데이터를 가져오라는 쿼리를 보낼 수 있다.
+### ④ _engine.muteLocalAudioStream(muted)
+ - 실제로 음소거를 할 수 있도록 RtcEngine 변수에 해당 라이브러리에서 제공하는 함수를 적용한다.
+ - invokeMethod를 통해 해당 라이브러리의 메소드를 불러온다 -> 모르는 개념 정리에서 공부하기!
+ <pre>
+ <code>
+ @override
+   Future<void> muteLocalAudioStream(bool muted) {
+     return _invokeMethod('muteLocalAudioStream', {
+       'muted': muted,
+     });
+   }
+ </code>
+ </pre>
 </details>
 
 
+
+<!---- 아직 완성 x 
 ---------------------------------------------------------
 
 <h2>❓ 모르는 개념 정리</h2>
@@ -562,12 +417,7 @@ Widget _buildBody(BuildContext context) {
   많이 시도해야겠다.
 
 # 참고 사이트
-- <a href="https://www.inflearn.com/course/flutter-netflix-clone-app/dashboard"> Flutter + Firebase로 넷플릭스 UI 클론 코딩하기 [무작정 플러터] 강의</a>
-- <a href="https://changjoopark.medium.com/flutter-main-%EB%A9%94%EC%86%8C%EB%93%9C%EC%97%90%EC%84%9C-%EB%B9%84%EB%8F%99%EA%B8%B0-%EB%A9%94%EC%86%8C%EB%93%9C-%EC%82%AC%EC%9A%A9%EC%8B%9C-%EB%B0%98%EB%93%9C%EC%8B%9C-%EC%B6%94%EA%B0%80%ED%95%B4%EC%95%BC%ED%95%98%EB%8A%94-%ED%95%9C%EC%A4%84-728705061375">[Flutter] main 메소드에서 비동기 메소드 사용시 반드시 추가해야하는 한줄</a> 
-
- - <a href="https://funncy.github.io/flutter/2021/03/06/firestore"> Firebase FireStore 총정리</a>
- 
- - <a href="https://velog.io/@oo0o_o0oo/Flutter-animation"> Flutter Listener</a>
+https://www.kowanas.com/coding/2021/01/25/methodchannel/ <method channel>
 
 --->
 
