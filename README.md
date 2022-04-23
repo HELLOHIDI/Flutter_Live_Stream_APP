@@ -160,8 +160,28 @@
       
 
 # Key Features
+<h2>3. 디렉터가 특정 참가자 음성화 활성화</h2>
 
-3. 사용자 로비 -> 활성 사용자되는 부분
+<h3>  </h3>
+<pre>
+<code>
+
+</code>
+</pre>
+
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ①
+    
+### ② 
+    
+### ③ 
+### ④ 
+</details>
+ 
+
 4. 라이브 스트리밍 켜는 -> 꺼는 부분
 +) copy_with 부분
  
@@ -345,6 +365,145 @@ _channel?.onMessageReceived = (AgoraRtmMessage message, AgoraRtmMember member) {
  </pre>
 </details>
 
+---------------------------------------------------------
+
+<h2> 3. 디렉터가 특정 참가자 음성화 활성화 </h2>
+디렉터 화면에서는 로비, 활성 사용자들을 확인할 수 있으면, 그 중 특정 사용자들의 음소거, 비디오 활성화 등의 기능을
+직접 설정할 수 있다. 다양한 기능 중 음성 활성화 부분을 대표적인 예시로 같은 메커니즘으로 작동되는 기능을 설명하려고 한다.
+
+<h3> 3-1. director.dart 中 build() </h3>
+<pre>
+<code>
+return Consumer( --- ①
+      builder: (BuildContext context, T Function<T>(ProviderBase<Object?, T>) watch, Widget? child) {
+        DirectorController directorNotifier = watch(directorController.notifier); --- ②
+        DirectorModel directorData = watch(directorController); --- ③
+</code>
+</pre>
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① Consumer
+ - provdiver에 응답하거나 provdiver가 업데이트할 때 상태관리 용도로 사용.(모르는 개념에서 자세히 설명 예정)
+
+### ② directorNotifier
+ <pre>
+ <code>
+ final directorController = StateNotifierProvider.autoDispose<DirectorController, DirectorModel>((ref) {
+  return DirectorController(ref.read);
+});
+ </code>
+ </pre>
+ - StateNotifier은 상태알림 업데이트 기능 UI를 업데이트하기 위해 청취하는 모든 사용자에게 알림을 보내거나 상태가 변경되었기 때문에 업데이트해야 하는 모든 기능을 알려줘야 된다.
+ - directorController notifier에 watch 메소드를 사용해서 디렉터 컨트롤러가 재생성된 경우나 변경된 경우 이 공급자의 말을 들으면 공급자/위젯이 재구성될 수 있게 한다.
+
+### ③ directorData
+ - 위에 내용과 비슷한 맥락이지만 directorController에만 watch 메소드를 사용함으로써 데이터적인 부분의 상태 변경에만 관여한다.
+</details>
+
+<h3> 3-2. director_controller.dart 中 toggleUserAudio() part </h3>
+<pre>
+<code>
+Future<void> toggleUserAudio({required int index, required bool muted}) async {
+    if (muted) {
+      state.channel!.sendMessage(AgoraRtmMessage.fromText("unmute ${state.activeUsers.elementAt(index).uid}")); --- ①
+    } else {
+      state.channel!.sendMessage(AgoraRtmMessage.fromText("mute ${state.activeUsers.elementAt(index).uid}"));
+    }
+  }
+  
++) 이해를 위한 추가 코드
+> director_model.dart
+DirectorModel({
+    this.engine,
+    this.client,
+    this.channel,
+    this.activeUsers = const {},
+    this.lobbyUsers = const {},
+    this.localUser,
+    this.isLive = false,
+    this.destinations = const [],
+  });
+  
+  > director_controller.dart
+  state = DirectorModel(engine: _engine, client: _client); // 디렉터모델 클래스 변수 생성
+  
+</code>
+</pre>
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+### ① AgoraRtmMessage.fromText("unmute ${state.activeUsers.elementAt(index).uid}")
+ - 만약 mute라면 버튼을 누름으로써 unmute로 바꿔야 되기 때문에 생성된 해당 활성 사용자의 인덱스(state.activeUsers.elementAt(index))
+ 를 통해 uid를 구해 unmute 메세지를 보낸다.(Key Features 2번 참고)
+</details>
+
+<h3> 3-3. director.dart 中 Mute Button part </h3>
+<pre>
+<code>
+IconButton(
+   onPressed: () {
+     if (directorData.activeUsers.elementAt(index).muted) { --- ①
+       directorNotifier.toggleUserAudio(index: index, muted: true);
+     } else {
+       directorNotifier.toggleUserAudio(index: index, muted: false);
+     }
+   },
+   icon: Icon(Icons.mic_off),
+   color: directorData.activeUsers.elementAt(index).muted ? Colors.red : Colors.white, --- ②
+ ),
+</code>
+</pre>
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① onPressed part
+ - 만약 directorData의 해당 활성 사용자가 음소거라면 버튼을 눌러 toggleUserAudio 함수를 호출시켜 음성을 활성화 시킨다.    
+
+### ② color part
+ - 만약 muted라면 빨간색, 아니면 하얀색
+</details>
+---------------------------------------------------------
+
+<h2>4. 로비 사용자를 활성 사용자로 승격시키는 </h2>
+
+<h3>  </h3>
+<pre>
+<code>
+
+</code>
+</pre>
+
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① bool muted & bool localUserActive
+    - bool muted : 음소거 여부를 결정하는 변수 (초기값 = false)
+    - bool localUserActive : 해당 사용자가 활성 사용자인지를 알려주는 변수 (초기값 = false)
+    
+### ② Muted button part
+    1. 만약 활성 사용자이라면, 누르면 _onToggleMute함수를 호출하는 버튼을 보여준다.
+    2. 아니라면 공백으로 남긴다.
+    
+### ③ setState muted part
+- 제작한 음소거 버튼을 누르면 setState()를 통해 muted 변수의 값을 반대로 변경해준다.  
+
+### ④ _engine.muteLocalAudioStream(muted)
+ - 실제로 음소거를 할 수 있도록 RtcEngine 변수에 해당 라이브러리에서 제공하는 함수를 적용한다.
+ - invokeMethod를 통해 해당 라이브러리의 메소드를 불러온다 -> 모르는 개념 정리에서 공부하기!
+ <pre>
+ <code>
+ @override
+   Future<void> muteLocalAudioStream(bool muted) {
+     return _invokeMethod('muteLocalAudioStream', {
+       'muted': muted,
+     });
+   }
+ </code>
+ </pre>
+</details>
 
 
 <!---- 아직 완성 x 
@@ -418,6 +577,10 @@ _channel?.onMessageReceived = (AgoraRtmMessage message, AgoraRtmMember member) {
 
 # 참고 사이트
 https://www.kowanas.com/coding/2021/01/25/methodchannel/ <method channel>
+
+<provider>
+https://terry1213.github.io/flutter/flutter-provider/
+https://eunjin3786.tistory.com/255
 
 --->
 
