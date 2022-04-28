@@ -160,32 +160,7 @@
       
 
 # Key Features
-<h2>3. 디렉터가 특정 참가자 음성화 활성화</h2>
-
-<h3>  </h3>
-<pre>
-<code>
-
-</code>
-</pre>
-
-
-<details>
-<summary> 🔍 자세히 분석하기 </summary>
-
-### ①
-    
-### ② 
-    
-### ③ 
-### ④ 
-</details>
- 
-
-4. 라이브 스트리밍 켜는 -> 꺼는 부분
-+) copy_with 부분
- 
- 
+  
 <h2>1. Participate 中 initializeAgora() part</h2>
 Agora Real-time Messaging API를 사용하기 위해 필요한 엔진과 클라이언트를 연결 구축하는 기능이다.
  
@@ -413,7 +388,7 @@ Future<void> toggleUserAudio({required int index, required bool muted}) async {
   }
   
 +) 이해를 위한 추가 코드
-> director_model.dart
+=> director_model.dart
 DirectorModel({
     this.engine,
     this.client,
@@ -425,7 +400,7 @@ DirectorModel({
     this.destinations = const [],
   });
   
-  > director_controller.dart
+=> director_controller.dart
   state = DirectorModel(engine: _engine, client: _client); // 디렉터모델 클래스 변수 생성
   
 </code>
@@ -464,14 +439,50 @@ IconButton(
 ### ② color part
  - 만약 muted라면 빨간색, 아니면 하얀색
 </details>
+
+
 ---------------------------------------------------------
 
-<h2>4. 로비 사용자를 활성 사용자로 승격시키는 </h2>
 
-<h3>  </h3>
+<h2> 4. 로비 사용자를 활성 사용자로 승격시키는 기능 </h2>
+
+<h3> 4-1. director_controller.dart 中 promoteToActiveUser() </h3>
 <pre>
 <code>
-
+  Future<void> promoteToActiveUser({required int uid}) async {
+    Set<AgoraUser> _tempLobby = state.lobbyUsers;
+    Color? tempColor;
+    String? tempName;
+    for (int i = 0; i < _tempLobby.length; i++) {
+      if (_tempLobby.elementAt(i).uid == uid) {
+        tempColor = _tempLobby.elementAt(i).backgroundColor;
+        tempName = _tempLobby.elementAt(i).name;
+        _tempLobby.remove(_tempLobby.elementAt(i));
+      } --- ①
+    }
+    state = state.copyWith(activeUsers: { --- ②
+      ...state.activeUsers,
+      AgoraUser(
+        uid: uid,
+        backgroundColor: tempColor,
+        name: tempName,
+      )
+    }, lobbyUsers: _tempLobby);
+    state.channel!.sendMessage(AgoraRtmMessage.fromText("unmute $uid")); --- ③
+    state.channel!.sendMessage(AgoraRtmMessage.fromText("enable $uid")); --- ③
+    state.channel!.sendMessage(AgoraRtmMessage.fromText(Message().sendActiveUsers(activeUsers: state.activeUsers))); --- ③
+    if (state.isLive) { 
+      updateStream(); --- ④ 
+    }
+  }
++) director.dart 中 build()
+  IconButton( --- ⑤
+    onPressed: () {
+      directorNotifier.promoteToActiveUser(uid: directorData.lobbyUsers.elementAt(index).uid);
+    },
+    icon: Icon(Icons.arrow_upward),
+    color: Colors.white,
+  ),
 </code>
 </pre>
 
@@ -479,31 +490,318 @@ IconButton(
 <details>
 <summary> 🔍 자세히 분석하기 </summary>
 
-### ① bool muted & bool localUserActive
-    - bool muted : 음소거 여부를 결정하는 변수 (초기값 = false)
-    - bool localUserActive : 해당 사용자가 활성 사용자인지를 알려주는 변수 (초기값 = false)
+### ① 로비 사용자 리스트에서 사용자 지우기
     
-### ② Muted button part
-    1. 만약 활성 사용자이라면, 누르면 _onToggleMute함수를 호출하는 버튼을 보여준다.
-    2. 아니라면 공백으로 남긴다.
+### ② 활성 사용자 리스트에 추가하기
     
-### ③ setState muted part
-- 제작한 음소거 버튼을 누르면 setState()를 통해 muted 변수의 값을 반대로 변경해준다.  
+### ③ 음소거 해제 & 비디오 활성화
 
-### ④ _engine.muteLocalAudioStream(muted)
- - 실제로 음소거를 할 수 있도록 RtcEngine 변수에 해당 라이브러리에서 제공하는 함수를 적용한다.
- - invokeMethod를 통해 해당 라이브러리의 메소드를 불러온다 -> 모르는 개념 정리에서 공부하기!
- <pre>
- <code>
- @override
-   Future<void> muteLocalAudioStream(bool muted) {
-     return _invokeMethod('muteLocalAudioStream', {
-       'muted': muted,
-     });
-   }
+### ④ updateStream()
+
+### ⑤ promotebutton
  </code>
  </pre>
 </details>
+
+----------------------------------------------------------
+
+<h2> 5. 라이브 스트리밍 기능 활성화 </h2>
+
+
+<h3> 5-1. stream.dart </h3>
+<pre>
+<code>
+enum StreamPlatform { youtube, twitch, other } --- ① 
+
+class StreamDestination {
+  StreamPlatform platform; --- ②
+  String url; --- ②
+
+  StreamDestination({
+    required this.platform,
+    required this.url,
+  });
+}
+
+</code>
+</pre>
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① enum StreamPlatform { youtube, twitch, other }
+    
+### ② Stream class 속성
+    - StreamPlatform platform: 
+    - String url: 
+</details>
+
+
+<h3> 5-2. director_controller.dart 中 addPublishDestination() & removePublishDestination  </h3>
+<pre>
+<code>
+  Future<void> addPublishDestination(StreamPlatform platform, String url) async {
+    if (state.isLive) {
+      state.engine!.addPublishStreamUrl(url, true); --- ① 
+    }
+    state = state.copyWith(destinations: [ --- ② 
+      ...state.destinations,
+      StreamDestination(platform: platform, url: url)
+    ]);
+  }
+  Future<void> removePublishDestination(String url) async {
+    if (state.isLive) { --- ③
+      state.engine!.removePublishStreamUrl(url);
+    }
+    List<StreamDestination> temp = state.destinations; --- ④
+    for (int i = 0; i < temp.length; i++) {
+      if (temp[i].url == url) {
+        temp.removeAt(i);
+        state = state.copyWith(destinations: temp);
+        return;
+      }
+    }
+  }
+</code>
+</pre>
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① state.engine!.addPublishStreamUrl(url, true)
+    
+### ② update platform
+    
+### ③ state.engine!.removePublishStreamUrl(url)
+
+### ④ delete platform
+</details>
+
+
+<h3> 5-3. director_controller.dart 中 startStream() & endStream() </h3>
+<pre>
+<code>
+Future<void> startStream() async {
+    List<TranscodingUser> transcodingUsers = []; --- ①
+    if (state.activeUsers.isEmpty) { 
+    } else if (state.activeUsers.length == 1) {
+      transcodingUsers.add(TranscodingUser(state.activeUsers.elementAt(0).uid, x: 0, y: 0, width: 1920, height: 1080, zOrder: 1, alpha: 1)); --- ①
+      ...
+      LiveTranscoding transcoding = LiveTranscoding( --- ②
+      transcodingUsers,
+      width: 1920,
+      height: 1080,
+    );
+    state.engine!.setLiveTranscoding(transcoding); --- ②
+    for (int i = 0; i < state.destinations.length; i++) { --- ③
+      print("STREAMING TO: ${state.destinations[i].url}");
+      state.engine!.addPublishStreamUrl(state.destinations[i].url, true);
+    }
+    state = state.copyWith(isLive: true); --- ⑤
+  }
+  Future<void> endStream() async {
+    for (int i = 0; i < state.destinations.length; i++) {
+      state.engine!.removePublishStreamUrl(state.destinations[i].url); --- ④
+    }
+    state = state.copyWith(isLive: false); --- ⑤
+  }
+</code>
+</pre>
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① List<TranscodingUser> transcodingUsers
+    
+### ② LiveTranscoding transcoding
+    
+### ③ state.engine!.addPublishStreamUrl
+
+### ④ state.engine!.removePublishStreamUrl(state.destinations[i].url)
+
+### ⑤ state.copyWith(isLive: true / false)
+
+</details>
+
+
+
+
+
+<h3> 5-4. director.dart 中 showTwitchBottomSheet() & streamButton() </h3>
+<pre>
+<code>
+Future<dynamic> showTwitchBottomSheet(BuildContext context, DirectorController directorNotifier) {
+    TextEditingController streamUrl = TextEditingController(); --- ①
+    TextEditingController streamKey = TextEditingController(); --- ①
+    return showModalBottomSheet( --- ② 
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...
+              TextField( --- ①
+                autofocus: true,
+                controller: streamUrl,
+                decoration: InputDecoration(hintText: "Injest Url"),
+              ),
+              TextField( --- ①
+                controller: streamKey,
+                decoration: InputDecoration(hintText: "Stream Key"),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, top: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton( --- ②
+                      onPressed: () {
+                        directorNotifier.addPublishDestination(StreamPlatform.twitch, "rtmp://" + streamUrl.text.trim() + "/app/" + streamKey.text.trim());
+                        Navigator.pop(context);
+                      },
+                      child: Text("Add"),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  Widget streamButton(StreamDestination destination) { --- ③
+    switch (destination.platform) {
+      case StreamPlatform.youtube:
+        return Container(
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), color: Colors.red),
+          child: Text(
+            "Youtube",
+            style: TextStyle(color: Colors.white),
+          ),
+          padding: EdgeInsets.all(8),
+          margin: const EdgeInsets.only(right: 4),
+        );
+    }
+  }
+</code>
+</pre>
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① streamUrl & streamKey
+    
+### ② showModalBottomSheet & ElevatedButton
+
+### ③ streamButton
+
+</details>
+
+
+<h3> 5-5. director.dart 中 PopupMenuButton() </h3>
+<pre>
+<code>
+PopupMenuButton(
+      itemBuilder: (context) {
+        List<PopupMenuEntry<Object>> list = [];
+        list.add( --- ①
+          makePopMenuItem(
+            "Youtube",
+            StreamPlatform.youtube,
+          ),
+        );
+        list.add(const PopupMenuDivider());
+        ...
+        return list;
+      },
+      icon: Icon(Icons.add),
+      onCanceled: () {
+        print("You have canceld menu");
+      },
+      onSelected: (value) { --- ②
+        switch (value) {
+          case StreamPlatform.youtube:
+            showYoutubeBottomSheet(context, directorNotifier);
+            break;
+        }
+      },
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+
+    for (int i = 0; i < directorData.destinations.length; i++)
+      PopupMenuButton( --- ③
+        itemBuilder: (context) { 
+          List<PopupMenuEntry<Object>> list = [];
+          list.add(
+            const PopupMenuItem(child: ListTile(leading: Icon(Icons.remove), title: Text("Remove Stream")), value: 0),
+          );
+          return list;
+        },
+        child: streamButton(directorData.destinations[i]), --- ④
+        onCanceled: () {
+          print("You have canceled the menu");
+        },
+        onSelected: (value) {
+          directorNotifier.removePublishDestination(directorData.destinations[i].url);
+        },
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+</code>
+</pre>
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① makePopMenuItem
+    
+### ② onSelected button
+    
+### ③ PopupMenuButton
+
+### ④ removePlatform
+</details>
+
+
+<h3> 5-6. director.dart 中 build() </h3>
+<pre>
+<code>
+directorData.isLive
+     ? CircularMenuItem( --- ①
+         icon: Icons.cancel,
+         color: Colors.orange,
+         onTap: () {
+           directorNotifier.endStream();
+         },
+       )
+       : CircularMenuItem( --- ②
+         icon: Icons.videocam,
+         color: Colors.orange,
+         onTap: () {
+           if (directorData.destinations.isNotEmpty) {
+             directorNotifier.startStream();
+           } else {
+             throw ("Invalid URL");
+           }
+         },
+       ),
+</code>
+</pre>
+
+<details>
+<summary> 🔍 자세히 분석하기 </summary>
+
+### ① isLive Button
+    
+### ② !isLive Button
+</details>
+
+
+
+
 
 
 <!---- 아직 완성 x 
@@ -512,40 +810,25 @@ IconButton(
 <h2>❓ 모르는 개념 정리</h2>
 <details>
 <summary> 🔍 자세히 알아보기! </summary>
- #### 1. 바인딩(binding) (1-1 中 ① WidgetsFlutterBinding.ensureInitialized() part)
- : 프로그램에 사용된 구성 요소의 실제 값 또는 프로퍼티를 결정짓는 행위를 의미합니다. 예를 들어 함수를 호출하는 부분에서 실제 함수가 위치한 메모리를 연결
+ #### 1. Method channel
  
- #### 2. FlutterFire CLI (1-1 中 ② Firebase.initializeApp() part)
- : 지원되는 모든 플랫폼에서 FlutterFire 설치 프로세스를 쉽게 하는 데 도움이 되는 명령을 제공하는 유용한 도구
+ #### 2. provider
  
- #### 3. CRUD 기능 (1-2 中 ② final DocumentReference reference part)
- : Create(생성), Read(읽기), Update(갱신), Delete(삭제)
+ #### 3.  RTMP
+ https://ko.wikipedia.org/wiki/%EB%A6%AC%EC%96%BC_%ED%83%80%EC%9E%84_%EB%A9%94%EC%8B%9C%EC%A7%95_%ED%94%84%EB%A1%9C%ED%86%A0%EC%BD%9C
 
+ #### 4. 트렌스코딩
+   // 새로 추가할 url을 추가하고, transcoding 여부를 true로 한다.
+      // https://blog.naver.com/PostView.naver?blogId=dna2073&logNo=221111113511&redirect=Dlog&widgetTypeCall=true&directAccess=false
+      // transcoding : 재생하는 디바이스(디바이스=재생장치=스마트폰, PC)가
+      // 영상의 코덱을 지원할지 못할때..   실시간으로 인코딩을 하여 재생이  가능하도록 해주는것
+ 
+ #### 5. copywith 메소드
 
- #### 4. Collection, Document (2-1 中 ② late Stream<QuerySnapshot> streamData part)
- ![image](https://user-images.githubusercontent.com/54922625/152805013-ab9a2658-9a9f-411f-93dc-8c95466dc451.png)
+ #### 6. singwhere (https://api.dart.dev/stable/2.16.1/dart-core/Iterable/singleWhere.html)
  
-     1. Collection 안에 여러 개의 Document가 있고 그 안에 Document를 채우는 field가 존재한다.
-     2. 즉 Collection으로 부터 특정 Document들을 가져왔기에 하나씩 까봐야 한다. 
-     => 이 말은 movie라는 큰 틀에서 가져왔기 때문에 각각의 문서들을 확인해봐야 한다는 맥락이 이렇게 이해되는 것이다.
- 
- #### 5. stream (2-1 中 ② late Stream<QuerySnapshot> streamData part)
-     스트림은 데이터의 추가나 변경이 일어나면 이를 관찰하던데서 처리하는 방법
-     => 비동기일 때 사용 (일단 이 정도 알고 넘어가고 추후 자세히 공부할 것)
-
- #### 6. Query (2-1 中 ② late Stream<QuerySnapshot> streamData part)
- : 데이터베이스에게 특정한 데이터를 보여달라는 클라이언트의 요청
- 
- #### 7. Listener (3-1 中 ② _SearchScreenState() part)
- 
- 리스너는 비동기 기능을 실행할 때 활용하는 기법으로
- 어떤 이벤트가 발생했을 때 실행되는 함수를 리스너라고 부른다
- 
- 예를 들어 사용자가 탭을 바꾸면 TabController의 addListener함수가 호출된다. 
- 이를 이용해 사용자가 탭을 바꾸면 값이나 상태를 갱신할 수 있다.
- 
- #### 8. <a href="https://api.flutter.dev/flutter/widgets/BackdropFilter-class.html">BackdropFilter class</a> (detail_screen.dart 中)
- : 기존 페인팅된 콘텐츠에 필터를 적용한 다음 자식 을 페인팅하는 위젯
+ #### 7. 
+ #### 8. 
  </details>
 --->
 # 기술 스택 (Technique Used)
