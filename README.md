@@ -445,6 +445,7 @@ IconButton(
 
 
 <h2> 4. 로비 사용자를 활성 사용자로 승격시키는 기능 </h2>
+로비에 있는 참가자를 화상 통화 참가자로 자격을 승격시키는 기능이다.
 
 <h3> 4-1. director_controller.dart 中 promoteToActiveUser() </h3>
 <pre>
@@ -491,14 +492,22 @@ IconButton(
 <summary> 🔍 자세히 분석하기 </summary>
 
 ### ① 로비 사용자 리스트에서 사용자 지우기
+    로비유저 리스트를 반복문으로 돌면서 승격하고자 하는 사용자의 uid와 일치하다면,<br>
+    tempColor, tempName의 해당 사용자의 색상과 이름을 대입하고<br>
+    로비 사용자 리스트에서 해당 사용자를 지운다.
     
 ### ② 활성 사용자 리스트에 추가하기
+    state를 copywith을 통해서 승격하고자 하는 사용자의 값을 스프레드 연산자를 통해<br>
+    activeUsers 리스트에 추가하고, lobbyUsers 리스트는 _tempLobby(승격 사용자를 제외한 리스트)로 업데이트 한다.
     
 ### ③ 음소거 해제 & 비디오 활성화
-
+    추가된 사용자의 음성과 비디오를 활성화 시키고, activeUsers가 바뀜을 메세지로 보낸다.
+    
 ### ④ updateStream()
-
+     라이브 스트리밍 중이면 updateStream()을 통해 업데이트 해준다.
+     
 ### ⑤ promotebutton
+     디렉터 화면에서 아이콘 버튼을 누름으로써 promoteToActiveUserg 함수를 호출하여 로비 사용자를 승격시킬 수 있다.
  </code>
  </pre>
 </details>
@@ -506,7 +515,7 @@ IconButton(
 ----------------------------------------------------------
 
 <h2> 5. 라이브 스트리밍 기능 활성화 </h2>
-
+해당 화상 통화를 다양한 플랫폼을 통해서 라이브 스트리밍을 할 수 있다. 대표적으로는 youtube, twitch가 있다.
 
 <h3> 5-1. stream.dart </h3>
 <pre>
@@ -530,10 +539,10 @@ class StreamDestination {
 <summary> 🔍 자세히 분석하기 </summary>
 
 ### ① enum StreamPlatform { youtube, twitch, other }
-    
+    사용할 플랫폼을 enum을 사용하여 StreamPlatform 속성의 상수값을 선언한다
 ### ② Stream class 속성
-    - StreamPlatform platform: 
-    - String url: 
+    - StreamPlatform platform: 플랫폼
+    - String url: 해당 url
 </details>
 
 
@@ -569,12 +578,31 @@ class StreamDestination {
 <summary> 🔍 자세히 분석하기 </summary>
 
 ### ① state.engine!.addPublishStreamUrl(url, true)
+    Agora Real-time Messaging 엔진에서 제공하는 addPublishStreamUrl()을 통해
+    스트리밍 플랫폼을 추가한다.
+    
+    <pre>
+    <code>
+    @override
+    Future<void> addPublishStreamUrl(String url, bool transcodingEnabled) {
+      return _invokeMethod('addPublishStreamUrl', {
+        'url': url,
+        'transcodingEnabled': transcodingEnabled,
+      });
+    }
+    </code>
+    </pre>
     
 ### ② update platform
+    state를 copywith을 통해서 추가한 플랫폼을 스프레드 연산자를 통해<br>
+    destinations 리스트에 추가하여 합병한다.
     
 ### ③ state.engine!.removePublishStreamUrl(url)
+     Agora Real-time Messaging 엔진에서 제공하는 addPublishStreamUrl()을 통해
+    스트리밍 플랫폼을 제거한다.
 
 ### ④ delete platform
+    반복문을 돌면서 삭제할 플랫폼을 찾은 후 state를 삭제 한 뒤 플랫폼 리스트로 업데이트한다.
 </details>
 
 
@@ -612,19 +640,20 @@ Future<void> startStream() async {
 <summary> 🔍 자세히 분석하기 </summary>
 
 ### ① List<TranscodingUser> transcodingUsers
+    트랜스코딩을 위한 변수를 제작하고 만약 활성 사용자가 있따면 트랜스코딩을 한다.<br>
+    (트랜스코딩은 모르는 개념정리에서 정리할 예정)
     
 ### ② LiveTranscoding transcoding
-    
-### ③ state.engine!.addPublishStreamUrl
+    Agora Real-time Messaging 엔진에서 제공하는 setLiveTranscoding()을 통해 트랜스코딩을 한다.
+    그 후 등록된 플랫폼에 순서대로 라이브 스트리밍을 순차적으로 시작한다.
 
 ### ④ state.engine!.removePublishStreamUrl(state.destinations[i].url)
-
+    Agora Real-time Messaging 엔진에서 제공하는 removePublishStreamUrl()을 통해<br>
+    등록된 플랫폼에 순서대로 라이브 스트리밍을 순차적으로 종료한다.
+    
 ### ⑤ state.copyWith(isLive: true / false)
-
+    라이브 스트리밍을 시작하거나 끝날 때 isLive 속성을 copyWith 메서드를 통해서 업데이트 해준다.
 </details>
-
-
-
 
 
 <h3> 5-4. director.dart 中 showTwitchBottomSheet() & streamButton() </h3>
@@ -694,11 +723,15 @@ Future<dynamic> showTwitchBottomSheet(BuildContext context, DirectorController d
 <summary> 🔍 자세히 분석하기 </summary>
 
 ### ① streamUrl & streamKey
+    라이브 스트리밍을 위해 필요한 url과 key가 들어갈 입력창이며,<br>
+    RTMP를 넣어주는 과정이다.(RTMP는 모르는 개념 정리에서 정리할 예정)
     
 ### ② showModalBottomSheet & ElevatedButton
-
+    해당 버튼을 누르면 directorcontroller의 addPublishDestination() 함수를 호출하여 플랫폼을 등록한다.<br>
+    이때 url에 해당되는 인자는 각 플랫폼의 형식에 맞추어서 대입한다.
+    
 ### ③ streamButton
-
+    각각 플랫폼의 해당되는 버튼을 제작하며, 나중에 스트리밍을 종료할 때 사용된다.
 </details>
 
 
@@ -722,7 +755,7 @@ PopupMenuButton(
       onCanceled: () {
         print("You have canceld menu");
       },
-      onSelected: (value) { --- ②
+      onSelected: (value) { --- ①
         switch (value) {
           case StreamPlatform.youtube:
             showYoutubeBottomSheet(context, directorNotifier);
@@ -733,7 +766,7 @@ PopupMenuButton(
     ),
 
     for (int i = 0; i < directorData.destinations.length; i++)
-      PopupMenuButton( --- ③
+      PopupMenuButton( --- ②
         itemBuilder: (context) { 
           List<PopupMenuEntry<Object>> list = [];
           list.add(
@@ -741,7 +774,7 @@ PopupMenuButton(
           );
           return list;
         },
-        child: streamButton(directorData.destinations[i]), --- ④
+        child: streamButton(directorData.destinations[i]), --- ③
         onCanceled: () {
           print("You have canceled the menu");
         },
@@ -756,13 +789,14 @@ PopupMenuButton(
 <details>
 <summary> 🔍 자세히 분석하기 </summary>
 
-### ① makePopMenuItem
+### ① makePopMenuItem & onSelected button
+    팝메뉴 아이템에 플랫폼 아이템을 추가하고, 해당 아이템을 누르면 각각의 showBottomSheet() 함수를 호출한다.
     
-### ② onSelected button
-    
-### ③ PopupMenuButton
+### ② PopupMenuButton
+    스트리밍을 종료하는 아이템을 만든다.
 
-### ④ removePlatform
+### ③ removePlatform
+    streambutton 중 해당 플렛폼을 누르며 removePublishDestination()을 호출하여 종료시킨다.
 </details>
 
 
@@ -795,14 +829,13 @@ directorData.isLive
 <summary> 🔍 자세히 분석하기 </summary>
 
 ### ① isLive Button
+    라이브 스트리밍 중일때 버튼을 누르면 스트리밍을 종료한다.
     
 ### ② !isLive Button
+    라이브 스트리밍 중이 아닐 때 만약 destination이 비어있지 않으면 리스트에 등록되어 있는<br>
+    플랫폼으로 스트리밍을 시작하고 아니면 에러를 던진다.
+    
 </details>
-
-
-
-
-
 
 <!---- 아직 완성 x 
 ---------------------------------------------------------
@@ -823,7 +856,7 @@ directorData.isLive
       // transcoding : 재생하는 디바이스(디바이스=재생장치=스마트폰, PC)가
       // 영상의 코덱을 지원할지 못할때..   실시간으로 인코딩을 하여 재생이  가능하도록 해주는것
  
- #### 5. copywith 메소드
+ #### 5. copywith 메소드 (model 파일)
 
  #### 6. singwhere (https://api.dart.dev/stable/2.16.1/dart-core/Iterable/singleWhere.html)
  
